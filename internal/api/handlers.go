@@ -89,3 +89,69 @@ func (srv *Server) handleRegister() fiber.Handler {
 		})
 	}
 }
+
+func (srv *Server) handleLogin() fiber.Handler {
+	type request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	return func(c *fiber.Ctx) error {
+		var (
+			err error
+
+			op     = "api.handleLogin"
+			ctx    = c.UserContext()
+			logger = srv.logger.With(
+				"operation", op,
+				requestid.LogKey, requestid.Extract(ctx),
+			)
+		)
+		defer func() {
+			if err != nil {
+				logger.Error("failed to handle login", "error", err)
+			}
+		}()
+
+		var req request
+		err = c.BodyParser(&req)
+		if err != nil {
+			return fiber.ErrBadRequest
+		}
+
+		user, err := srv.db.UserRepo().FindByEmail(ctx, req.Email)
+		if err != nil {
+			if errors.Is(err, database.ErrUserNotFound) {
+				return fiber.NewError(fiber.StatusNotFound, database.ErrUserNotFound.Error())
+			}
+
+			return fiber.ErrInternalServerError
+		}
+
+		err = passhash.Compare(req.Password, user.Password)
+		if err != nil {
+			if errors.Is(err, passhash.ErrWrongPassword) {
+				return fiber.NewError(fiber.StatusNotFound, database.ErrUserNotFound.Error())
+			}
+
+			return fiber.ErrInternalServerError
+		}
+
+		payload := jwt.Payload{
+			UserID:   user.ID,
+			Nickname: user.Nickname,
+			Email:    user.Email,
+			Verified: user.Verified,
+		}
+		params := jwt.GenerateParams{SigningKey: srv.conf.JWT.Secret, TTL: 3 * 24 * time.Hour}
+		accessToken, err := jwt.Generate(payload, params)
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"accessToken": accessToken,
+			"user":        user,
+		})
+	}
+}

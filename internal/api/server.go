@@ -117,6 +117,7 @@ func (srv *Server) setuoRoutes() {
 		auth := v1.Group("/auth")
 		{
 			auth.Post("/register", srv.handleRegister())
+			auth.Post("/login", srv.handleLogin())
 		}
 	}
 }

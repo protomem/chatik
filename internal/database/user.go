@@ -62,6 +62,7 @@ type (
 		CreateIndexes(ctx context.Context) error
 
 		FindByID(ctx context.Context, userID uuid.UUID) (User, error)
+		FindByEmail(ctx context.Context, email string) (User, error)
 
 		Create(ctx context.Context, dto CreateUserDTO) (uuid.UUID, error)
 	}
@@ -118,6 +119,10 @@ func (repo *userRepository) FindByID(ctx context.Context, userID uuid.UUID) (Use
 
 	res := repo.coll.FindOne(ctx, filter)
 	if res.Err() != nil {
+		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
+			return User{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
+		}
+
 		return User{}, fmt.Errorf("%s: %w", op, res.Err())
 	}
 
@@ -125,6 +130,48 @@ func (repo *userRepository) FindByID(ctx context.Context, userID uuid.UUID) (Use
 	err = res.Decode(&doc)
 	if err != nil {
 		return User{}, fmt.Errorf("%s: decode: %w", op, err)
+	}
+
+	user := User{
+		ID:        userID,
+		CreatedAt: doc.CreatedAt,
+		UpdatedAt: doc.UpdatedAt,
+		Nickname:  doc.Nickname,
+		Password:  doc.Password,
+		Email:     doc.Email,
+		Verified:  doc.Verified,
+	}
+
+	return user, nil
+}
+
+func (repo *userRepository) FindByEmail(ctx context.Context, email string) (User, error) {
+	var (
+		err error
+
+		op = "userRepo.FindByEmail"
+	)
+
+	filter := bson.D{{Key: "email", Value: email}}
+
+	res := repo.coll.FindOne(ctx, filter)
+	if res.Err() != nil {
+		if errors.Is(res.Err(), mongo.ErrNoDocuments) {
+			return User{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
+		}
+
+		return User{}, fmt.Errorf("%s: %w", op, res.Err())
+	}
+
+	doc := UserDocument{}
+	err = res.Decode(&doc)
+	if err != nil {
+		return User{}, fmt.Errorf("%s: decode: %w", op, err)
+	}
+
+	userID, err := uuid.Parse(doc.UserID)
+	if err != nil {
+		return User{}, fmt.Errorf("%s: parse user id: %w", op, err)
 	}
 
 	user := User{
