@@ -7,7 +7,10 @@ import (
 	"github.com/google/uuid"
 )
 
-const Header = fiber.HeaderXRequestID
+const (
+	Header = fiber.HeaderXRequestID
+	LogKey = "requestId"
+)
 
 func Empty() string {
 	return uuid.Nil.String()

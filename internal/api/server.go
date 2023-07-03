@@ -73,9 +73,14 @@ func (srv *Server) configure(ctx context.Context) error {
 	}
 
 	// init database
-	srv.db, err = database.New(ctx, srv.conf.DB.URI)
+	srv.db, err = database.New(ctx, srv.logger, srv.conf.DB.URI)
 	if err != nil {
 		return fmt.Errorf("new database: %w", err)
+	}
+
+	err = srv.db.UserRepo().CreateIndexes(ctx)
+	if err != nil {
+		return fmt.Errorf("%w", err)
 	}
 
 	// init app
@@ -106,6 +111,14 @@ func (srv *Server) setuoRoutes() {
 	srv.app.Use(srv.recovery())
 
 	srv.app.Get("/health", srv.handleHealth())
+
+	v1 := srv.app.Group("/api/v1")
+	{
+		auth := v1.Group("/auth")
+		{
+			auth.Post("/register", srv.handleRegister())
+		}
+	}
 }
 
 func (srv *Server) registerOnShutdown() {

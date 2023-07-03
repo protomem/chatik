@@ -12,6 +12,10 @@ type Config struct {
 		Addr string `env:"ADDR,notEmpty"`
 	} `envPrefix:"HTTP_"`
 
+	JWT struct {
+		Secret string `env:"SECRET,notEmpty"`
+	} `envPrefix:"JWT_"`
+
 	Log struct {
 		Level string `env:"LEVEL,notEmpty"`
 		File  string `env:"FILE,notEmpty"`

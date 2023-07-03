@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/protomem/chatik/internal/logging"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 type DB struct {
+	logger logging.Logger
 	client *mongo.Client
 }
 
-func New(ctx context.Context, uri string) (*DB, error) {
+func New(ctx context.Context, logger logging.Logger, uri string) (*DB, error) {
 	var (
 		err error
 
@@ -31,7 +33,10 @@ func New(ctx context.Context, uri string) (*DB, error) {
 		return nil, fmt.Errorf("%s: ping: %w", op, err)
 	}
 
-	return &DB{client: client}, nil
+	return &DB{
+		logger: logger,
+		client: client,
+	}, nil
 }
 
 func (db *DB) Close(ctx context.Context) error {
