@@ -13,9 +13,16 @@ import (
 
 func (srv *Server) handleHealth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		res := fiber.Map{
 			"status": "ok",
-		})
+		}
+
+		authPayload, ok := jwt.Extract(c.UserContext())
+		if ok {
+			res["userId"] = authPayload.UserID
+		}
+
+		return c.Status(fiber.StatusOK).JSON(res)
 	}
 }
 

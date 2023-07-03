@@ -110,6 +110,8 @@ func (srv *Server) setuoRoutes() {
 	srv.app.Use(srv.requestLogging())
 	srv.app.Use(srv.recovery())
 
+	srv.app.Use(srv.authenticator())
+
 	srv.app.Get("/health", srv.handleHealth())
 
 	v1 := srv.app.Group("/api/v1")

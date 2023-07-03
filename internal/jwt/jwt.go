@@ -27,11 +27,11 @@ type (
 	}
 )
 
-func With(ctx context.Context, payload Payload) context.Context {
+func Inject(ctx context.Context, payload Payload) context.Context {
 	return context.WithValue(ctx, ctxKey{}, payload)
 }
 
-func From(ctx context.Context) (Payload, bool) {
+func Extract(ctx context.Context) (Payload, bool) {
 	payload, ok := ctx.Value(ctxKey{}).(Payload)
 	return payload, ok
 }
