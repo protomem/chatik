@@ -5,7 +5,7 @@ import { Router } from "./router/Router";
 export function App() {
   const theme = createTheme({
     palette: {
-      mode: "dark",
+      mode: "light",
     },
     typography: {
       fontFamily: "JetBrains Mono",
