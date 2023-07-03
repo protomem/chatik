@@ -20,7 +20,7 @@ export function RegisterForm() {
   return (
     <Form
       buttonText={"register"}
-      onSubmit={() => {
+      handleSubmit={() => {
         console.log(formData);
         clearFormData();
       }}

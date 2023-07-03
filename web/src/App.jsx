@@ -1,6 +1,7 @@
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
-import "@fontsource/jetbrains-mono";
 import { Router } from "./router/Router";
+import { StoreProvider } from "./store/StoreProvider";
+import "@fontsource/jetbrains-mono";
 
 export function App() {
   const theme = createTheme({
@@ -14,9 +15,11 @@ export function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline>
-        <Router />
-      </CssBaseline>
+      <StoreProvider>
+        <CssBaseline>
+          <Router />
+        </CssBaseline>
+      </StoreProvider>
     </ThemeProvider>
   );
 }

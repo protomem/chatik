@@ -1,6 +1,6 @@
 import { Button, Container, Typography } from "@mui/material";
 
-export function Form({ children, onSubmit, buttonText }) {
+export function Form({ children, handleSubmit, buttonText }) {
   return (
     <Container
       sx={{
@@ -12,10 +12,7 @@ export function Form({ children, onSubmit, buttonText }) {
         gap: 2,
       }}
       component={"form"}
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit();
-      }}
+      onSubmit={handleSubmit}
     >
       {children}
       <Button
