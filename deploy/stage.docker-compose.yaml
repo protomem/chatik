@@ -1,0 +1,45 @@
+version: "3"
+
+services:
+  web:
+    build:
+      context: ../web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    environment:
+      - VITE_API_URL=http://localhost:8080
+
+  app:
+    build:
+      context: ../.
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - ../configs/stage.env
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      DB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@db:27017/?authMechanism=SCRAM-SHA-256
+    depends_on:
+      - db
+    # volumes:
+    #   - /var/log/chatik:./logs
+
+  db:
+    image: mongo:4.4
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - dbdata:/data/db
+
+volumes:
+  dbdata:

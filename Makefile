@@ -1,12 +1,16 @@
 
 .DEFAULT_GOAL := all
 
-PROJECT_NAME := chatik
+PROJECT_NAME = chatik
 
 .PHONY: all
 all:
 	@echo "Choose target ..."
 
+
+#***********************************************************************#
+#							QUALITY CONTROL                        		#
+#***********************************************************************#
 
 .PHONY: lint
 lint:
@@ -22,6 +26,11 @@ test:
 ci: lint test
 
 
+
+#***********************************************************************#
+#								LOCAL                                   #
+#***********************************************************************#
+
 .PHONY: build-local
 build-local: ci
 	go build -v -o ./build/${PROJECT_NAME} ./cmd/${PROJECT_NAME}
@@ -34,12 +43,12 @@ start-local: build-local
 
 .PHONY: start-infra-local
 start-infra-local:
-	docker compose -p ${PROJECT_NAME} -f ./deploy/local.docker-compose.yaml up -d
+	docker compose -p ${PROJECT_NAME}-local -f ./deploy/local.docker-compose.yaml up -d
 
 
 .PHONY: stop-infra-local
 stop-infra-local:
-	docker compose -p ${PROJECT_NAME} -f ./deploy/local.docker-compose.yaml down
+	docker compose -p ${PROJECT_NAME}-local -f ./deploy/local.docker-compose.yaml down
 
 
 .PHONY: start-web-local
@@ -52,4 +61,21 @@ clean:
 	rm -rf ./build
 	rm -rf ./logs
 
+
+#***********************************************************************#
+#								STAGE                                   #
+#***********************************************************************#
+
+# TODO: add to deps: ci
+.PHONY: start-stage
+start-stage: JWT_SECRET="" MONGO_PASSWORD="" MONGO_USERNAME=""
+start-stage:
+	JWT_SECRET=${JWT_SECRET} \
+	MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD} MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME} \
+		docker compose -p ${PROJECT_NAME}-stage -f ./deploy/stage.docker-compose.yaml up -d --build
+
+
+.PHONY: stop-stage
+stop-stage:
+	docker compose -p ${PROJECT_NAME}-stage -f ./deploy/stage.docker-compose.yaml down
 
