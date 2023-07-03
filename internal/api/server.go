@@ -109,6 +109,7 @@ func (srv *Server) setuoRoutes() {
 	srv.app.Use(requestid.Middleware())
 	srv.app.Use(srv.requestLogging())
 	srv.app.Use(srv.recovery())
+	srv.app.Use(srv.CORS())
 
 	srv.app.Use(srv.authenticator())
 
