@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/protomem/chatik/internal/agregate"
 	"github.com/protomem/chatik/internal/database"
 	"github.com/protomem/chatik/internal/jwt"
 	"github.com/protomem/chatik/internal/passhash"
@@ -177,6 +178,76 @@ func (srv *Server) handleLogin() fiber.Handler {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"accessToken": accessToken,
 			"user":        user,
+		})
+	}
+}
+
+func (srv *Server) handleCreateChannel() fiber.Handler {
+	type request struct {
+		Title string `json:"title"`
+	}
+
+	return func(c *fiber.Ctx) error {
+		var (
+			err error
+
+			op     = "api.handleCreateChannel"
+			ctx    = c.UserContext()
+			logger = srv.logger.With(
+				"operation", op,
+				requestid.LogKey, requestid.Extract(ctx),
+			)
+		)
+		defer func() {
+			if err != nil {
+				logger.Error("failed to handle create channel", "error", err)
+			}
+		}()
+
+		var req request
+		err = c.BodyParser(&req)
+		if err != nil {
+			return fiber.ErrBadRequest
+		}
+
+		err = validation.Validate(
+			vrule.Title(req.Title),
+		)
+		if err != nil {
+			return err
+		}
+
+		authPayload, _ := jwt.Extract(ctx)
+
+		channelID, err := srv.db.ChannelRepo().Create(ctx, database.CreateChannelDTO{
+			Title:  req.Title,
+			UserID: authPayload.UserID,
+		})
+		if err != nil {
+			if errors.Is(err, database.ErrChannelExists) {
+				return fiber.NewError(fiber.StatusConflict, database.ErrChannelExists.Error())
+			}
+
+			return fiber.ErrInternalServerError
+		}
+
+		channel, err := srv.db.ChannelRepo().FindByID(ctx, channelID)
+		if err != nil {
+			// TODO: handle error: database.ErrChannelNotFound?
+			return fiber.ErrInternalServerError
+		}
+
+		user, err := srv.db.UserRepo().FindByID(ctx, channel.UserID)
+		if err != nil {
+			// TODO: handle error: database.ErrUserNotFound?
+			return fiber.ErrInternalServerError
+		}
+
+		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+			"channel": agregate.Channel{
+				Channel: channel,
+				User:    user,
+			},
 		})
 	}
 }

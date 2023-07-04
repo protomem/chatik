@@ -34,7 +34,7 @@ type (
 		Verified bool   `json:"isVerified"`
 	}
 
-	UserDocument struct {
+	userDocument struct {
 		ID        primitive.ObjectID `bson:"_id"`
 		CreatedAt time.Time          `bson:"created_at"`
 		UpdatedAt time.Time          `bson:"updated_at"`
@@ -126,7 +126,7 @@ func (repo *userRepository) FindByID(ctx context.Context, userID uuid.UUID) (Use
 		return User{}, fmt.Errorf("%s: %w", op, res.Err())
 	}
 
-	doc := UserDocument{}
+	doc := userDocument{}
 	err = res.Decode(&doc)
 	if err != nil {
 		return User{}, fmt.Errorf("%s: decode: %w", op, err)
@@ -163,7 +163,7 @@ func (repo *userRepository) FindByEmail(ctx context.Context, email string) (User
 		return User{}, fmt.Errorf("%s: %w", op, res.Err())
 	}
 
-	doc := UserDocument{}
+	doc := userDocument{}
 	err = res.Decode(&doc)
 	if err != nil {
 		return User{}, fmt.Errorf("%s: decode: %w", op, err)
@@ -196,7 +196,7 @@ func (repo *userRepository) Create(ctx context.Context, dto CreateUserDTO) (uuid
 
 	now := time.Now()
 	userID := uuid.New() // TODO: handle panic?
-	doc := UserDocument{
+	doc := userDocument{
 		ID: primitive.NewObjectID(),
 
 		CreatedAt: now,

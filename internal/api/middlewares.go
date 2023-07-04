@@ -79,3 +79,14 @@ func (srv *Server) authenticator() fiber.Handler {
 		return c.Next()
 	}
 }
+
+func (srv *Server) authorizer() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		_, ok := jwt.Extract(c.UserContext())
+		if !ok {
+			return fiber.NewError(fiber.StatusForbidden, "access denied")
+		}
+
+		return c.Next()
+	}
+}

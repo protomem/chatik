@@ -81,7 +81,12 @@ func (srv *Server) configure(ctx context.Context) error {
 
 	err = srv.db.UserRepo().CreateIndexes(ctx)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return fmt.Errorf("db: %w", err)
+	}
+
+	err = srv.db.ChannelRepo().CreateIndexes(ctx)
+	if err != nil {
+		return fmt.Errorf("db: %w", err)
 	}
 
 	// init app
@@ -142,6 +147,13 @@ func (srv *Server) setuoRoutes() {
 		{
 			auth.Post("/register", srv.handleRegister())
 			auth.Post("/login", srv.handleLogin())
+		}
+
+		channels := v1.Group("/channels")
+		{
+			channels.Use(srv.authorizer())
+
+			channels.Post("/", srv.handleCreateChannel())
 		}
 	}
 }
