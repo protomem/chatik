@@ -40,6 +40,7 @@ export function LoginForm() {
     } catch (err) {
       console.log(`login failed: ${err}`);
       alert(`login failed: ${err}`);
+      clearFormData();
     }
   };
 

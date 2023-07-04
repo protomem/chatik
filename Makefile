@@ -52,8 +52,9 @@ stop-infra-local:
 
 
 .PHONY: start-web-local
-start-web-local:
-	cd ./web && yarn dev
+start-web-local: WEB_API_URL=""
+start-web-local: 
+	cd ./web && VITE_API_URL=${WEB_API_URL} yarn dev
 
 
 .PHONY: clean
