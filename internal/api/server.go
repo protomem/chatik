@@ -153,6 +153,7 @@ func (srv *Server) setuoRoutes() {
 		{
 			channels.Use(srv.authorizer())
 
+			channels.Get("/", srv.handleListChannels())
 			channels.Post("/", srv.handleCreateChannel())
 		}
 	}

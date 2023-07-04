@@ -64,6 +64,8 @@ type (
 		FindByID(ctx context.Context, userID uuid.UUID) (User, error)
 		FindByEmail(ctx context.Context, email string) (User, error)
 
+		FindAllByIDs(ctx context.Context, userIDs []uuid.UUID) ([]User, error)
+
 		Create(ctx context.Context, dto CreateUserDTO) (uuid.UUID, error)
 	}
 
@@ -185,6 +187,62 @@ func (repo *userRepository) FindByEmail(ctx context.Context, email string) (User
 	}
 
 	return user, nil
+}
+
+func (repo *userRepository) FindAllByIDs(ctx context.Context, userIDs []uuid.UUID) ([]User, error) {
+	var (
+		err error
+
+		op = "userRepo.FindAllByIDs"
+	)
+
+	userIDsStr := make([]string, len(userIDs))
+	for i, userID := range userIDs {
+		userIDsStr[i] = userID.String()
+	}
+
+	filter := bson.D{
+		{Key: "user_id", Value: bson.D{{Key: "$in", Value: userIDsStr}}},
+	}
+
+	res, err := repo.coll.Find(ctx, filter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf("%s: %w", op, ErrUserNotFound)
+		}
+
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	docs := []userDocument{}
+	err = res.All(ctx, &docs)
+	if err != nil {
+		return nil, fmt.Errorf("%s: decode: %w", op, err)
+	}
+
+	users := make([]User, 0, len(docs))
+	for _, doc := range docs {
+		userID, err := uuid.Parse(doc.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("%s: parse user id: %w", op, err)
+		}
+
+		users = append(users, User{
+			ID:        userID,
+			CreatedAt: doc.CreatedAt,
+			UpdatedAt: doc.UpdatedAt,
+			Nickname:  doc.Nickname,
+			Password:  doc.Password,
+			Email:     doc.Email,
+			Verified:  doc.Verified,
+		})
+	}
+
+	if len(users) == 0 {
+		return nil, fmt.Errorf("%s: %w", op, ErrUserNotFound)
+	}
+
+	return users, nil
 }
 
 func (repo *userRepository) Create(ctx context.Context, dto CreateUserDTO) (uuid.UUID, error) {

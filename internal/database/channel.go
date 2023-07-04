@@ -56,6 +56,10 @@ type (
 	ChannelRepository interface {
 		CreateIndexes(ctx context.Context) error
 
+		FindByID(ctx context.Context, channelID uuid.UUID) (Channel, error)
+
+		FindAll(ctx context.Context) ([]Channel, error)
+
 		Create(ctx context.Context, dto CreateChannelDTO) (uuid.UUID, error)
 	}
 
@@ -83,12 +87,6 @@ func (repo *channelRepository) CreateIndexes(ctx context.Context) error {
 		{
 			Keys: bson.M{
 				"title": 1,
-			},
-			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys: bson.M{
-				"user_id": 1,
 			},
 			Options: options.Index().SetUnique(true),
 		},
@@ -138,6 +136,56 @@ func (repo *channelRepository) FindByID(ctx context.Context, channelID uuid.UUID
 	}
 
 	return channel, nil
+}
+
+func (repo *channelRepository) FindAll(ctx context.Context) ([]Channel, error) {
+	var (
+		err error
+
+		op = "channelRepo.FindAll"
+	)
+
+	res, err := repo.coll.Find(ctx, bson.D{})
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf("%s: %w", op, ErrChannelNotFound)
+		}
+
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	docs := []channelDocument{}
+	err = res.All(ctx, &docs)
+	if err != nil {
+		return nil, fmt.Errorf("%s: decode: %w", op, err)
+	}
+
+	channels := make([]Channel, 0, len(docs))
+	for _, doc := range docs {
+		channelID, err := uuid.Parse(doc.ChannelID)
+		if err != nil {
+			return nil, fmt.Errorf("%s: parse channel id: %w", op, err)
+		}
+
+		userID, err := uuid.Parse(doc.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("%s: parse user id: %w", op, err)
+		}
+
+		channels = append(channels, Channel{
+			ID:        channelID,
+			CreatedAt: doc.CreatedAt,
+			UpdatedAt: doc.UpdatedAt,
+			Title:     doc.Title,
+			UserID:    userID,
+		})
+	}
+
+	if len(channels) == 0 {
+		return nil, fmt.Errorf("%s: %w", op, ErrChannelNotFound)
+	}
+
+	return channels, nil
 }
 
 func (repo *channelRepository) Create(ctx context.Context, dto CreateChannelDTO) (uuid.UUID, error) {
