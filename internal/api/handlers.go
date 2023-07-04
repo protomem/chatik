@@ -321,3 +321,33 @@ func (srv *Server) handleCreateChannel() fiber.Handler {
 		})
 	}
 }
+
+func (srv *Server) handleDeleteChannel() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var (
+			err error
+
+			op     = "api.handleDeleteChannel"
+			ctx    = c.UserContext()
+			logger = srv.logger.With(
+				"operation", op,
+				requestid.LogKey, requestid.Extract(ctx),
+			)
+		)
+		defer func() {
+			if err != nil {
+				logger.Error("failed to handle delete channel", "error", err)
+			}
+		}()
+
+		channelID, _ := uuid.Parse(c.Params("channelID"))
+		authPayload, _ := jwt.Extract(ctx)
+
+		err = srv.db.ChannelRepo().DeleteByIDAndUserID(ctx, channelID, authPayload.UserID)
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+
+		return c.SendStatus(fiber.StatusNoContent)
+	}
+}

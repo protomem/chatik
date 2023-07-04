@@ -61,6 +61,8 @@ type (
 		FindAll(ctx context.Context) ([]Channel, error)
 
 		Create(ctx context.Context, dto CreateChannelDTO) (uuid.UUID, error)
+
+		DeleteByIDAndUserID(ctx context.Context, channelID uuid.UUID, userID uuid.UUID) error
 	}
 
 	channelRepository struct {
@@ -220,4 +222,18 @@ func (repo *channelRepository) Create(ctx context.Context, dto CreateChannelDTO)
 	}
 
 	return channelID, nil
+}
+
+func (repo *channelRepository) DeleteByIDAndUserID(ctx context.Context, channelID uuid.UUID, userID uuid.UUID) error {
+	filter := bson.D{{Key: "$and", Value: bson.A{
+		bson.D{{Key: "channel_id", Value: channelID.String()}},
+		bson.D{{Key: "user_id", Value: userID.String()}},
+	}}}
+
+	_, err := repo.coll.DeleteOne(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("channelRepo.DeleteByID: %w", err)
+	}
+
+	return nil
 }

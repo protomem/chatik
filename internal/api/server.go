@@ -155,6 +155,7 @@ func (srv *Server) setuoRoutes() {
 
 			channels.Get("/", srv.handleListChannels())
 			channels.Post("/", srv.handleCreateChannel())
+			channels.Delete("/:channelID", srv.handleDeleteChannel())
 		}
 	}
 }
