@@ -105,4 +105,4 @@ install-go:
 	rm -rf ${GO_DIR}/go
 	tar -C ${GO_DIR} -xzf go1.20.5.linux-amd64.tar.gz
 	rm go1.20.5.linux-amd64.tar.gz
-	@ehco "Add ${GO_DIR}/go/bin to PATH"
+	@echo "Add ${GO_DIR}/go/bin to PATH"
