@@ -82,3 +82,17 @@ start-stage:
 stop-stage:
 	docker compose -p ${PROJECT_NAME}-stage -f ./deploy/stage.docker-compose.yaml down
 
+
+#***********************************************************************
+# Tools
+#***********************************************************************
+
+.PHONY: mkdir-tools
+mkdir-tools:
+	mkdir -p ./tools
+
+.PHONY: install-lint
+install-lint: LINT_DIR="./tools/"
+install-lint: mkdir-tools
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${LINT_DIR} v1.53.3
+
