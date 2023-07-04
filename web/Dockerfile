@@ -1,12 +1,14 @@
 FROM node:alpine AS builder
 
+ARG VITE_API_URL
+
 WORKDIR /app
 
 COPY package.json package.json
 RUN yarn install
 
 COPY ./ ./
-RUN yarn build
+RUN VITE_API_URL=$VITE_API_URL yarn build
 
 
 FROM nginx:alpine

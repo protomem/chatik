@@ -5,13 +5,13 @@ services:
     build:
       context: ../web
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${WEB_API_URL}
     restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
       - app
-    environment:
-      - VITE_API_URL=http://localhost:8080
 
   app:
     build:
