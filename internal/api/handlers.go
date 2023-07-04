@@ -9,6 +9,8 @@ import (
 	"github.com/protomem/chatik/internal/jwt"
 	"github.com/protomem/chatik/internal/passhash"
 	"github.com/protomem/chatik/internal/requestid"
+	"github.com/protomem/chatik/internal/validation"
+	"github.com/protomem/chatik/internal/validation/vrule"
 )
 
 func (srv *Server) handleHealth() fiber.Handler {
@@ -26,7 +28,6 @@ func (srv *Server) handleHealth() fiber.Handler {
 	}
 }
 
-// TODO: Add validation
 func (srv *Server) handleRegister() fiber.Handler {
 	type request struct {
 		Nickname string `json:"nickname"`
@@ -55,6 +56,15 @@ func (srv *Server) handleRegister() fiber.Handler {
 		err = c.BodyParser(&req)
 		if err != nil {
 			return fiber.ErrBadRequest
+		}
+
+		err = validation.Validate(
+			vrule.Nickname(req.Nickname),
+			vrule.Password(req.Password),
+			vrule.Email(req.Email),
+		)
+		if err != nil {
+			return err
 		}
 
 		hashPass, err := passhash.Generate(req.Password)
@@ -124,6 +134,14 @@ func (srv *Server) handleLogin() fiber.Handler {
 		err = c.BodyParser(&req)
 		if err != nil {
 			return fiber.ErrBadRequest
+		}
+
+		err = validation.Validate(
+			vrule.Email(req.Email),
+			vrule.Password(req.Password),
+		)
+		if err != nil {
+			return err
 		}
 
 		user, err := srv.db.UserRepo().FindByEmail(ctx, req.Email)

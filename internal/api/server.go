@@ -15,6 +15,7 @@ import (
 	"github.com/protomem/chatik/internal/database"
 	"github.com/protomem/chatik/internal/logging"
 	"github.com/protomem/chatik/internal/requestid"
+	"github.com/protomem/chatik/internal/validation"
 )
 
 type Server struct {
@@ -91,6 +92,26 @@ func (srv *Server) configure(ctx context.Context) error {
 			var apiErr *fiber.Error
 			if errors.As(err, &apiErr) {
 				code = apiErr.Code
+			}
+
+			var v *validation.Validator
+			if errors.As(err, &v) {
+				code = fiber.StatusBadRequest
+
+				var vErrs []string
+
+				vErrs = append(vErrs, v.Errors...)
+
+				for vFieldErrK, vFieldErrV := range v.FieldErrors {
+					vErrs = append(vErrs, fmt.Sprintf("%s: %s", vFieldErrK, vFieldErrV))
+				}
+
+				res := fiber.Map{
+					"error":   v.Error(),
+					"details": vErrs,
+				}
+
+				return c.Status(code).JSON(res)
 			}
 
 			return c.Status(code).JSON(fiber.Map{
