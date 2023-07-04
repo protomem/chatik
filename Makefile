@@ -91,8 +91,18 @@ stop-stage:
 mkdir-tools:
 	mkdir -p ./tools
 
+
 .PHONY: install-lint
-install-lint: LINT_DIR="./tools/"
-install-lint: mkdir-tools
+install-lint: LINT_DIR="/usr/local/bin"
+install-lint:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${LINT_DIR} v1.53.3
 
+
+.PHONY: install-go
+install-go: GO_DIR="/usr/local"
+install-go:
+	curl -O https://dl.google.com/go/go1.20.5.linux-amd64.tar.gz
+	rm -rf ${GO_DIR}/go
+	tar -C ${GO_DIR} -xzf go1.20.5.linux-amd64.tar.gz
+	rm go1.20.5.linux-amd64.tar.gz
+	@ehco "Add ${GO_DIR}/go/bin to PATH"
