@@ -37,8 +37,9 @@ build-local: ci
 
 
 .PHONY: start-local
+start-local: HTTP_ADDR="localhost:8080"
 start-local: build-local
-	./build/${PROJECT_NAME} -conf ./configs/local.env
+	HTTP_ADDR=${HTTP_ADDR} ./build/${PROJECT_NAME} -conf ./configs/local.env
 
 
 .PHONY: start-infra-local
@@ -52,7 +53,7 @@ stop-infra-local:
 
 
 .PHONY: start-web-local
-start-web-local: WEB_API_URL=""
+start-web-local: WEB_API_URL="localhost:8080"
 start-web-local: 
 	cd ./web && VITE_API_URL=${WEB_API_URL} yarn dev
 
