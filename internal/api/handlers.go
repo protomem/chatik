@@ -356,6 +356,79 @@ func (srv *Server) handleDeleteChannel() fiber.Handler {
 	}
 }
 
+func (srv *Server) handleListMessages() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var (
+			err error
+
+			op     = "api.handleListMessages"
+			ctx    = c.UserContext()
+			logger = srv.logger.With(
+				"operation", op,
+				requestid.LogKey, requestid.Extract(ctx),
+			)
+		)
+		defer func() {
+			if err != nil {
+				logger.Error("failed to handle list messages", "error", err)
+			}
+		}()
+
+		channelID, _ := uuid.Parse(c.Params("channelID"))
+
+		messages, err := srv.db.MessageRepo().FindAllByChannelID(ctx, channelID)
+		if err != nil {
+			if errors.Is(err, database.ErrMessageNotFound) {
+				return fiber.NewError(fiber.StatusNotFound, database.ErrMessageNotFound.Error())
+			}
+
+			return fiber.ErrInternalServerError
+		}
+
+		userIDs := make([]uuid.UUID, 0, len(messages))
+		for _, message := range messages {
+			userIDs = append(userIDs, message.UserID)
+		}
+
+		users, err := srv.db.UserRepo().FindAllByIDs(ctx, userIDs)
+		if err != nil {
+			if errors.Is(err, database.ErrUserNotFound) {
+				return fiber.NewError(fiber.StatusNotFound, database.ErrMessageNotFound.Error())
+			}
+
+			return fiber.ErrInternalServerError
+		}
+
+		messageAgrs := make([]agregate.Message, 0, len(messages))
+		for _, message := range messages {
+			var curUser database.User
+			for _, user := range users {
+				if user.ID == message.UserID {
+					curUser = user
+					break
+				}
+			}
+
+			if curUser.ID == uuid.Nil {
+				continue
+			}
+
+			messageAgrs = append(messageAgrs, agregate.Message{
+				Message: message,
+				User:    curUser,
+			})
+		}
+
+		if len(messageAgrs) == 0 {
+			return fiber.NewError(fiber.StatusNotFound, database.ErrMessageNotFound.Error())
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"messages": messageAgrs,
+		})
+	}
+}
+
 func (srv *Server) handleCreateMessage() fiber.Handler {
 	type request struct {
 		Content string `json:"content"`

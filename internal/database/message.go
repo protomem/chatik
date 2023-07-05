@@ -14,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var _ UserRepository = (*userRepository)(nil)
+var _ MessageRepository = (*messageRepository)(nil)
 
 var ErrMessageNotFound = errors.New("message(s) not found")
 
@@ -58,7 +58,9 @@ type (
 
 		FindByID(ctx context.Context, messageID uuid.UUID) (Message, error)
 
-		Create(ctx context.Context) (uuid.UUID, error)
+		FindAllByChannelID(ctx context.Context, channelID uuid.UUID) ([]Message, error)
+
+		Create(ctx context.Context, dto CreateMessageDTO) (uuid.UUID, error)
 	}
 
 	messageRepository struct {
@@ -136,6 +138,64 @@ func (repo *messageRepository) FindByID(ctx context.Context, messageID uuid.UUID
 	}
 
 	return message, nil
+}
+
+func (repo *messageRepository) FindAllByChannelID(ctx context.Context, channelID uuid.UUID) ([]Message, error) {
+	var (
+		err error
+
+		op = "messageRepo.FindAllByChannelID"
+	)
+
+	filter := bson.D{{Key: "channel_id", Value: channelID.String()}}
+
+	res, err := repo.coll.Find(ctx, filter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf("%s: %w", op, ErrMessageNotFound)
+		}
+
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	doc := []messageDocument{}
+	err = res.All(ctx, &doc)
+	if err != nil {
+		return nil, fmt.Errorf("%s: decode: %w", op, err)
+	}
+
+	var messages []Message
+	for _, doc := range doc {
+		messageID, err := uuid.Parse(doc.MessageID)
+		if err != nil {
+			return nil, fmt.Errorf("%s: parse message id: %w", op, err)
+		}
+
+		userID, err := uuid.Parse(doc.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("%s: parse user id: %w", op, err)
+		}
+
+		channelID, err := uuid.Parse(doc.ChannelID)
+		if err != nil {
+			return nil, fmt.Errorf("%s: parse channel id: %w", op, err)
+		}
+
+		messages = append(messages, Message{
+			ID:        messageID,
+			CreatedAt: doc.CreatedAt,
+			UpdatedAt: doc.UpdatedAt,
+			Content:   doc.Content,
+			UserID:    userID,
+			ChannelID: channelID,
+		})
+	}
+
+	if len(messages) == 0 {
+		return nil, fmt.Errorf("%s: %w", op, ErrMessageNotFound)
+	}
+
+	return messages, nil
 }
 
 func (repo *messageRepository) Create(ctx context.Context, dto CreateMessageDTO) (uuid.UUID, error) {

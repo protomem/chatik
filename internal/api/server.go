@@ -164,6 +164,7 @@ func (srv *Server) setuoRoutes() {
 
 			messages := channels.Group(":channelID/messages")
 			{
+				messages.Get("/", srv.handleListMessages())
 				messages.Post("/", srv.handleCreateMessage())
 			}
 		}
