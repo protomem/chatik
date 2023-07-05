@@ -70,11 +70,15 @@ clean:
 
 # TODO: add to deps: ci
 .PHONY: start-stage
-start-stage: JWT_SECRET="" MONGO_PASSWORD="" MONGO_USERNAME="" WEB_API_URL="locahost:8080" HTTP_PORT="8080"
+start-stage: JWT_SECRET="" 
+start-stage: MONGO_PASSWORD="" 
+start-stage: MONGO_USER="" 
+start-stage: WEB_API_URL="locahost:8080" 
+start-stage: HTTP_PORT="8080"
 start-stage:
 	JWT_SECRET=${JWT_SECRET} \
 	WEB_API_URL=${WEB_API_URL} HTTP_PORT=${HTTP_PORT} \
-	MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD} MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME} \
+	MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD} MONGO_INITDB_ROOT_USERNAME=${MONGO_USER} \
 		docker compose -p ${PROJECT_NAME}-stage -f ./deploy/stage.docker-compose.yaml up -d --build
 
 
