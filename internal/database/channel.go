@@ -17,7 +17,7 @@ import (
 var _ ChannelRepository = (*channelRepository)(nil)
 
 var (
-	ErrChannelNotFound = errors.New("channel not found")
+	ErrChannelNotFound = errors.New("channel(s) not found")
 	ErrChannelExists   = errors.New("channel already exists")
 )
 

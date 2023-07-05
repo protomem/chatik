@@ -17,7 +17,7 @@ import (
 var _ UserRepository = (*userRepository)(nil)
 
 var (
-	ErrUserNotFound = errors.New("user not found")
+	ErrUserNotFound = errors.New("user(s) not found")
 	ErrUserExists   = errors.New("user already exists")
 )
 

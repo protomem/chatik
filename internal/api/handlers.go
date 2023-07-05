@@ -246,6 +246,10 @@ func (srv *Server) handleListChannels() fiber.Handler {
 			})
 		}
 
+		if len(channelAgrs) == 0 {
+			return fiber.NewError(fiber.StatusNotFound, database.ErrChannelNotFound.Error())
+		}
+
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"channels": channelAgrs,
 		})
