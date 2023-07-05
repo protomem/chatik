@@ -6,7 +6,7 @@ import "@fontsource/jetbrains-mono";
 export function App() {
   const theme = createTheme({
     palette: {
-      mode: "light",
+      mode: "dark",
     },
     typography: {
       fontFamily: "JetBrains Mono",
