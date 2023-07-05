@@ -505,3 +505,33 @@ func (srv *Server) handleCreateMessage() fiber.Handler {
 		})
 	}
 }
+
+func (srv *Server) handleDeleteMessage() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var (
+			err error
+
+			op     = "api.handleDeleteMessage"
+			ctx    = c.UserContext()
+			logger = srv.logger.With(
+				"operation", op,
+				requestid.LogKey, requestid.Extract(ctx),
+			)
+		)
+		defer func() {
+			if err != nil {
+				logger.Error("failed to handle delete message", "error", err)
+			}
+		}()
+
+		messageID, _ := uuid.Parse(c.Params("messageID"))
+		authPayload, _ := jwt.Extract(ctx)
+
+		err = srv.db.MessageRepo().DeleteByIDAndUserID(ctx, messageID, authPayload.UserID)
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+
+		return c.SendStatus(fiber.StatusNoContent)
+	}
+}

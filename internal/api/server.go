@@ -166,6 +166,7 @@ func (srv *Server) setuoRoutes() {
 			{
 				messages.Get("/", srv.handleListMessages())
 				messages.Post("/", srv.handleCreateMessage())
+				messages.Delete("/:messageID", srv.handleDeleteMessage())
 			}
 		}
 	}
