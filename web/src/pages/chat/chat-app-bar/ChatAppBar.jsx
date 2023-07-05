@@ -8,8 +8,8 @@ export function ChatAppBar() {
   const currentUser = useSelector((state) => selectCurrentUser(state));
 
   return (
-    <AppBar position="static">
-      <Toolbar>
+    <AppBar position="static" sx={{ height: "7vh" }}>
+      <Toolbar sx={{ height: "100%" }}>
         <Box
           sx={{
             flexGrow: 1,
