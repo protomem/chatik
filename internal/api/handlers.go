@@ -355,3 +355,80 @@ func (srv *Server) handleDeleteChannel() fiber.Handler {
 		return c.SendStatus(fiber.StatusNoContent)
 	}
 }
+
+func (srv *Server) handleCreateMessage() fiber.Handler {
+	type request struct {
+		Content string `json:"content"`
+	}
+
+	return func(c *fiber.Ctx) error {
+		var (
+			err error
+
+			op     = "api.handleCreateMessage"
+			ctx    = c.UserContext()
+			logger = srv.logger.With(
+				"operation", op,
+				requestid.LogKey, requestid.Extract(ctx),
+			)
+		)
+		defer func() {
+			if err != nil {
+				logger.Error("failed to handle create message", "error", err)
+			}
+		}()
+
+		var req request
+		err = c.BodyParser(&req)
+		if err != nil {
+			return fiber.ErrBadRequest
+		}
+
+		err = validation.Validate(
+			vrule.Content(req.Content),
+		)
+		if err != nil {
+			return err
+		}
+
+		channelID, _ := uuid.Parse(c.Params("channelID"))
+		authPayload, _ := jwt.Extract(ctx)
+
+		_, err = srv.db.ChannelRepo().FindByID(ctx, channelID)
+		if err != nil {
+			if errors.Is(err, database.ErrChannelNotFound) {
+				return fiber.NewError(fiber.StatusBadRequest, database.ErrChannelNotFound.Error())
+			}
+
+			return fiber.ErrInternalServerError
+		}
+
+		messageID, err := srv.db.MessageRepo().Create(ctx, database.CreateMessageDTO{
+			Content:   req.Content,
+			UserID:    authPayload.UserID,
+			ChannelID: channelID,
+		})
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+
+		// TODO: handle error: database.ErrChannelNotFound?
+		message, err := srv.db.MessageRepo().FindByID(ctx, messageID)
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+
+		// TODO: handle error: database.ErrUserNotFound?
+		user, err := srv.db.UserRepo().FindByID(ctx, message.UserID)
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+
+		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+			"message": agregate.Message{
+				Message: message,
+				User:    user,
+			},
+		})
+	}
+}

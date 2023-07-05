@@ -25,3 +25,9 @@ func Title(title string) validation.ValidateFunc {
 		v.CheckField(validation.Length(title, 4, 18), "title", "must be between 4 and 18 characters")
 	}
 }
+
+func Content(content string) validation.ValidateFunc {
+	return func(v *validation.Validator) {
+		v.CheckField(validation.Length(content, 1, 400), "content", "must be between 1 and 400 characters")
+	}
+}

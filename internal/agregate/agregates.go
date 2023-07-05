@@ -7,3 +7,9 @@ type Channel struct {
 
 	User database.User `json:"user"`
 }
+
+type Message struct {
+	database.Message
+
+	User database.User `json:"user"`
+}

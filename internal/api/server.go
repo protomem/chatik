@@ -89,6 +89,11 @@ func (srv *Server) configure(ctx context.Context) error {
 		return fmt.Errorf("db: %w", err)
 	}
 
+	err = srv.db.MessageRepo().CreateIndexes(ctx)
+	if err != nil {
+		return fmt.Errorf("db: %w", err)
+	}
+
 	// init app
 	srv.app = fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -156,6 +161,11 @@ func (srv *Server) setuoRoutes() {
 			channels.Get("/", srv.handleListChannels())
 			channels.Post("/", srv.handleCreateChannel())
 			channels.Delete("/:channelID", srv.handleDeleteChannel())
+
+			messages := channels.Group(":channelID/messages")
+			{
+				messages.Post("/", srv.handleCreateMessage())
+			}
 		}
 	}
 }
