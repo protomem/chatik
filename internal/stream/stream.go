@@ -38,22 +38,17 @@ func (s *Stream) Handle() fiber.Handler {
 
 		_ = _upgrader.Upgrade(c.Context(), func(c *websocket.Conn) {
 			for {
-				logger.Debug("listening for new message")
-
 				data, ok := <-session
 				if !ok {
 					delete(s.sessions, sessionID)
 					return
 				}
 
-				logger.Debug("new message", "data", string(data))
-
 				err := c.WriteMessage(websocket.TextMessage, data)
 				if err != nil {
 					logger.Error("stream.WriteMessage", "error", err)
 				}
 
-				logger.Debug("message sent")
 			}
 		})
 
