@@ -11,6 +11,7 @@ import (
 	"github.com/protomem/chatik/internal/jwt"
 	"github.com/protomem/chatik/internal/passhash"
 	"github.com/protomem/chatik/internal/requestid"
+	"github.com/protomem/chatik/internal/stream"
 	"github.com/protomem/chatik/internal/validation"
 	"github.com/protomem/chatik/internal/validation/vrule"
 )
@@ -317,11 +318,16 @@ func (srv *Server) handleCreateChannel() fiber.Handler {
 			return fiber.ErrInternalServerError
 		}
 
+		channelAgr := agregate.Channel{
+			Channel: channel,
+			User:    user,
+		}
+
+		// TODO: logging
+		_ = stream.SendEvent(srv.stream, stream.NewChannelEvent(channelAgr))
+
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-			"channel": agregate.Channel{
-				Channel: channel,
-				User:    user,
-			},
+			"channel": channelAgr,
 		})
 	}
 }
@@ -351,6 +357,9 @@ func (srv *Server) handleDeleteChannel() fiber.Handler {
 		if err != nil {
 			return fiber.ErrInternalServerError
 		}
+
+		// TODO: logging
+		_ = stream.SendEvent(srv.stream, stream.RemoveChannelEvent(channelID))
 
 		return c.SendStatus(fiber.StatusNoContent)
 	}
@@ -497,11 +506,16 @@ func (srv *Server) handleCreateMessage() fiber.Handler {
 			return fiber.ErrInternalServerError
 		}
 
+		messageAgr := agregate.Message{
+			Message: message,
+			User:    user,
+		}
+
+		// TODO: logging
+		_ = stream.SendEvent(srv.stream, stream.NewMessageEvent(messageAgr))
+
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-			"message": agregate.Message{
-				Message: message,
-				User:    user,
-			},
+			"message": messageAgr,
 		})
 	}
 }
@@ -532,6 +546,13 @@ func (srv *Server) handleDeleteMessage() fiber.Handler {
 			return fiber.ErrInternalServerError
 		}
 
+		// TODO: logging
+		_ = stream.SendEvent(srv.stream, stream.RemoveMessageEvent(messageID))
+
 		return c.SendStatus(fiber.StatusNoContent)
 	}
+}
+
+func (srv *Server) handleStream() fiber.Handler {
+	return srv.stream.Handle()
 }

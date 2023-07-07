@@ -15,6 +15,7 @@ import (
 	"github.com/protomem/chatik/internal/database"
 	"github.com/protomem/chatik/internal/logging"
 	"github.com/protomem/chatik/internal/requestid"
+	"github.com/protomem/chatik/internal/stream"
 	"github.com/protomem/chatik/internal/validation"
 )
 
@@ -24,7 +25,8 @@ type Server struct {
 
 	db *database.DB
 
-	app *fiber.App
+	stream *stream.Stream
+	app    *fiber.App
 
 	closer *closer.Closer
 }
@@ -93,6 +95,9 @@ func (srv *Server) configure(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("db: %w", err)
 	}
+
+	// init stream
+	srv.stream = stream.New(srv.logger)
 
 	// init app
 	srv.app = fiber.New(fiber.Config{
@@ -169,11 +174,16 @@ func (srv *Server) setuoRoutes() {
 				messages.Delete("/:messageID", srv.handleDeleteMessage())
 			}
 		}
+
+		v1.Get("/stream", srv.handleStream())
 	}
 }
 
 func (srv *Server) registerOnShutdown() {
 	srv.closer.Add(srv.app.ShutdownWithContext)
+	srv.closer.Add(func(ctx context.Context) error {
+		return srv.stream.Close()
+	})
 	srv.closer.Add(srv.db.Close)
 	srv.closer.Add(func(ctx context.Context) error {
 		return srv.logger.Sync()

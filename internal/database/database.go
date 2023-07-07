@@ -34,7 +34,7 @@ func New(ctx context.Context, logger logging.Logger, uri string) (*DB, error) {
 	}
 
 	return &DB{
-		logger: logger,
+		logger: logger.With("component", "db"),
 		client: client,
 	}, nil
 }
