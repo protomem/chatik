@@ -1,5 +1,10 @@
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
+import { ChatBar } from "./chat-bar/ChatBar";
 
 export function Chat() {
-  return <Typography>Chat</Typography>;
+  return (
+    <Box>
+      <ChatBar />
+    </Box>
+  );
 }
