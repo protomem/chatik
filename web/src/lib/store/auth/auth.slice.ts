@@ -1,5 +1,5 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { IUser } from "../../domain/entity/entities";
+import { IUser } from "../../entity/entities";
 
 interface AuthState {
   token: string;
