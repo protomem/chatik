@@ -11,7 +11,7 @@ const initialState: ChannelsState = {
   currentChannel: null,
 };
 
-export const channelsSlice = createSlice({
+const channelsSlice = createSlice({
   name: "channels",
   initialState,
   reducers: {
@@ -34,3 +34,6 @@ export const channelsSlice = createSlice({
     },
   },
 });
+
+export const channelsReducer = channelsSlice.reducer;
+export const channelsActions = channelsSlice.actions;

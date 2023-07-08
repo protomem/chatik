@@ -7,13 +7,14 @@ export function ChatBar() {
   const currentUser = useAppSelector((state) => selectUser(state));
 
   return (
-    <AppBar position="static">
+    <AppBar position="static" sx={{ height: "7vh" }}>
       <Toolbar
         sx={{
           display: "flex",
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
+          height: "100%",
         }}
       >
         <Box>

@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/dist/query";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { IChannel } from "../entity/entities";
 
 interface GetListChannelsRequest {
@@ -29,3 +29,5 @@ export const channelsApi = createApi({
     }),
   }),
 });
+
+export const { useGetListChannelsQuery } = channelsApi;

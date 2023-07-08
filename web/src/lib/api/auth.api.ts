@@ -12,7 +12,7 @@ interface LoginResponse {
 }
 
 interface RegisterRequest {
-  nikcname: string;
+  nickname: string;
   email: string;
   password: string;
 }
@@ -37,7 +37,7 @@ export const authApi = createApi({
     }),
 
     register: builder.mutation<RegisterResponse, RegisterRequest>({
-      query: ({ nikcname: nickname, email, password }) => ({
+      query: ({ nickname, email, password }) => ({
         url: "/register",
         method: "POST",
         body: { nickname, email, password },
