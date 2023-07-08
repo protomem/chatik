@@ -1,8 +1,8 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { NotFound } from "../pages/not-found/NotFound";
-import { Chat } from "../pages/chat/Chat";
 import { Auth } from "../pages/auth/Auth";
 import { RequireAuth } from "../components/require-auth/RequireAuth";
+import { Chat } from "../pages/chat/Chat";
 
 export function Router() {
   return (

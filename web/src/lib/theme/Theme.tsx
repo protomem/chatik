@@ -1,9 +1,11 @@
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
-import { Router } from "./router/Router";
-import { StoreProvider } from "./store/StoreProvider";
 import "@fontsource/jetbrains-mono";
 
-export function App() {
+interface ThemeProps {
+  children: React.ReactNode;
+}
+
+export function Theme({ children }: ThemeProps) {
   const theme = createTheme({
     palette: {
       mode: "dark",
@@ -15,11 +17,7 @@ export function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <StoreProvider>
-        <CssBaseline>
-          <Router />
-        </CssBaseline>
-      </StoreProvider>
+      <CssBaseline>{children}</CssBaseline>
     </ThemeProvider>
   );
 }
