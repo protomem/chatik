@@ -61,7 +61,7 @@ export function Chat() {
 
         <Box
           sx={{
-            flexGrow: 8,
+            flexGrow: 10,
             height: "100%",
             bgcolor: "red",
             display: "flex",

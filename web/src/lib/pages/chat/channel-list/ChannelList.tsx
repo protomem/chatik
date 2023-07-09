@@ -7,7 +7,7 @@ export function ChannelList() {
   const channels = useAppSelector((state) => selectChannels(state));
 
   return (
-    <List>
+    <List sx={{ gap: 5 }}>
       {channels.map((channel) => (
         <ChannelItem key={channel.id} channel={channel} />
       ))}
