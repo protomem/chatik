@@ -18,7 +18,7 @@ export function ChannelItem({ channel }: ChannelItemProps) {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
 
-    if (!isActive) dispatch(channelsActions.setCurrentChannel(channel));
+    dispatch(channelsActions.setCurrentChannel(channel));
   };
 
   return (
