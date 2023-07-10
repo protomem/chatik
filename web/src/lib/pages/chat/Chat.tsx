@@ -9,9 +9,6 @@ import { NewChannelButton } from "./new-channel-button/NewChannelButton";
 import { ChannelList } from "./channel-list/ChannelList";
 import { DialogWindow } from "./dialog-window/DialogWIndow";
 import { NewMessageInput } from "./new-message-input/NewMessageInput";
-import { selectCurrentChannel } from "../../store/channels/channels.selectors";
-import { useGetListMessagesQuery } from "../../api/messages.api";
-import { messagesActions } from "../../store/messages/messages.slice";
 
 export function Chat() {
   const dispatch = useAppDispatch();
@@ -41,6 +38,8 @@ export function Chat() {
           sx={{
             flexGrow: 2,
             height: "100%",
+            maxWidth: "20%",
+            minWidth: "20%",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
@@ -62,7 +61,13 @@ export function Chat() {
             <NewChannelButton />
           </Box>
 
-          <Box sx={{ flexGrow: 1, width: "100%", overflow: "auto" }}>
+          <Box
+            sx={{
+              flexGrow: 1,
+              width: "100%",
+              overflow: "auto",
+            }}
+          >
             <ChannelList />
           </Box>
         </Box>
@@ -81,6 +86,7 @@ export function Chat() {
             sx={{
               flexGrow: 14,
               width: "100%",
+              overflow: "auto",
             }}
           >
             <DialogWindow />
@@ -93,6 +99,8 @@ export function Chat() {
               borderTop: 1,
               borderColor: "divider",
               boxSizing: "border-box",
+              minHeight: "11%",
+              maxHeight: "11%",
             }}
           >
             <NewMessageInput />
