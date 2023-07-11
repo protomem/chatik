@@ -36,7 +36,11 @@ export function NewMessageInput() {
         value={messageInput}
         onChange={(e) => setMessageInput(e.target.value)}
       />
-      <Button sx={{ mx: 4, height: "50%" }} variant="contained" type="submit">
+      <Button
+        sx={{ mx: 4, mb: 1, height: "50%" }}
+        variant="contained"
+        type="submit"
+      >
         <Send sx={{ mr: 1 }} />
         Send
       </Button>
