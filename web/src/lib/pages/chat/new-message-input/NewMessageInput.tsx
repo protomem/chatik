@@ -1,17 +1,35 @@
 import { Send } from "@mui/icons-material";
 import { Box, Button, TextField } from "@mui/material";
 import { useState } from "react";
+import { useAppSelector } from "../../../store/hooks";
+import { selectToken } from "../../../store/auth/auth.selectors";
+import { useCreateMessageMutation } from "../../../api/messages.api";
+import { selectCurrentChannel } from "../../../store/channels/channels.selectors";
 
 export function NewMessageInput() {
-  const [messageInput, setMessageInput] = useState("");
+  const token = useAppSelector((state) => selectToken(state));
+  const currentChannel = useAppSelector((state) => selectCurrentChannel(state));
 
-  // TODO: Implement this
+  const [messageInput, setMessageInput] = useState("");
+  const clearMessageInput = () => setMessageInput("");
+
+  const [createMessage] = useCreateMessageMutation();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log(messageInput);
+    const res = createMessage({
+      channelId: currentChannel?.id ?? "",
+      token,
+      content: messageInput,
+    });
 
-    setMessageInput("");
+    res.catch((err) => {
+      console.log(err);
+      alert(`${err}`);
+    });
+
+    clearMessageInput();
   };
 
   return (
