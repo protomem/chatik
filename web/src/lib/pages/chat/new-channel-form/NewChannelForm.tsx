@@ -1,5 +1,4 @@
 import {
-  Box,
   Button,
   Container,
   Dialog,
@@ -7,6 +6,9 @@ import {
   TextField,
 } from "@mui/material";
 import { useState } from "react";
+import { useCreateChannelMutation } from "../../../api/channels.api";
+import { useAppSelector } from "../../../store/hooks";
+import { selectToken } from "../../../store/auth/auth.selectors";
 
 interface NewChannelFormProps {
   open: boolean;
@@ -14,9 +16,29 @@ interface NewChannelFormProps {
 }
 
 export function NewChannelForm({ open, onClose }: NewChannelFormProps) {
+  const token = useAppSelector((state) => selectToken(state));
+  const [createChannel] = useCreateChannelMutation();
+
   const [formData, setFormData] = useState({
     title: "",
   });
+
+  const clearFormData = () => {
+    setFormData({ title: "" });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const res = createChannel({ token, ...formData });
+    res.catch((err) => {
+      console.log(err);
+      alert(`${err}`);
+    });
+
+    clearFormData();
+    onClose();
+  };
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -31,11 +53,7 @@ export function NewChannelForm({ open, onClose }: NewChannelFormProps) {
           alignItems: "center",
         }}
         component={"form"}
-        onSubmit={(e) => {
-          e.preventDefault();
-          console.log(`new channel: ${formData.title}`);
-          onClose();
-        }}
+        onSubmit={handleSubmit}
       >
         <TextField
           label="Channel title"
