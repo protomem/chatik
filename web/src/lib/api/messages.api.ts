@@ -20,6 +20,14 @@ interface CreateMessageResponse {
   message: IMessage;
 }
 
+interface DeleteMessageRequest {
+  channelId: string;
+  messageId: string;
+  token: string;
+}
+
+interface DeleteMessageResponse {}
+
 export const messagesApi = createApi({
   reducerPath: "messagesApi",
   baseQuery: fetchBaseQuery({
@@ -52,8 +60,24 @@ export const messagesApi = createApi({
         },
       }),
     }),
+
+    deleteMessage: builder.mutation<
+      DeleteMessageResponse,
+      DeleteMessageRequest
+    >({
+      query: ({ channelId, messageId, token }) => ({
+        url: `/${channelId}/messages/${messageId}`,
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+    }),
   }),
 });
 
-export const { useGetListMessagesQuery, useCreateMessageMutation } =
-  messagesApi;
+export const {
+  useGetListMessagesQuery,
+  useCreateMessageMutation,
+  useDeleteMessageMutation,
+} = messagesApi;
