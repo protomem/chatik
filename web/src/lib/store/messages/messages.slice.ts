@@ -23,7 +23,7 @@ export const messagesSlice = createSlice({
 
     removeMessage: (state, { payload }: PayloadAction<string>) => {
       state.messages = state.messages.filter(
-        (message) => message.id !== payload
+        (message) => message.id !== payload,
       );
     },
   },

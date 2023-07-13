@@ -32,6 +32,8 @@ func (s *Stream) Handle() fiber.Handler {
 			requestid.LogKey, requestid.Extract(c.UserContext()),
 		)
 
+		c.Request().Header.Del(fiber.HeaderOrigin)
+
 		session := make(chan []byte)
 		sessionID := uuid.New()
 		s.sessions[sessionID] = session
