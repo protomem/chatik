@@ -40,7 +40,7 @@ export function RegisterForm() {
 
     try {
       const { accessToken, user } = await register({
-        nikcname: formData.nickname,
+        nickname: formData.nickname,
         email: formData.email,
         password: formData.password,
       }).unwrap();

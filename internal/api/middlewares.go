@@ -24,7 +24,9 @@ func (srv *Server) recovery() fiber.Handler {
 }
 
 func (srv *Server) CORS() fiber.Handler {
-	return cors.New(cors.ConfigDefault)
+	conf := cors.ConfigDefault
+
+	return cors.New(conf)
 }
 
 func (srv *Server) authenticator() fiber.Handler {

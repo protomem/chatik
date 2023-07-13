@@ -73,7 +73,7 @@ clean:
 start-stage: JWT_SECRET="" 
 start-stage: MONGO_PASSWORD="" 
 start-stage: MONGO_USER="" 
-start-stage: WEB_API_URL="locahost:8080" 
+start-stage: WEB_API_URL="localhost:8080" 
 start-stage: HTTP_PORT="8080"
 start-stage:
 	JWT_SECRET=${JWT_SECRET} \
