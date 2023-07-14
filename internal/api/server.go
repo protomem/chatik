@@ -96,8 +96,8 @@ func (srv *Server) configure(ctx context.Context) error {
 		return fmt.Errorf("db: %w", err)
 	}
 
-	// init stream
-	srv.broadcast = stream.NewBroadcast(srv.logger)
+	// init broadcast
+	srv.broadcast = stream.NewBroadcast(srv.logger, stream.NewWebSocket(srv.logger))
 
 	// init app
 	srv.app = fiber.New(fiber.Config{

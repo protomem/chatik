@@ -3,7 +3,6 @@ package stream
 import (
 	"errors"
 
-	"github.com/fasthttp/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/protomem/chatik/internal/logging"
@@ -12,50 +11,47 @@ import (
 
 var ErrSessionClosed = errors.New("session closed")
 
-var _upgrader = &websocket.FastHTTPUpgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
 type Broadcast struct {
-	logger   logging.Logger
-	sessions map[uuid.UUID]*Session
+	logger    logging.Logger
+	sessions  map[uuid.UUID]*Session
+	transport Transport
 }
 
-func NewBroadcast(logger logging.Logger) *Broadcast {
+func NewBroadcast(logger logging.Logger, transport Transport) *Broadcast {
 	return &Broadcast{
-		logger:   logger.With("component", "stream"),
-		sessions: make(map[uuid.UUID]*Session),
+		logger:    logger.With("component", "stream"),
+		sessions:  make(map[uuid.UUID]*Session),
+		transport: transport,
 	}
 }
 
 func (b *Broadcast) Handle() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		logger := b.logger.With(
-			"operation", "stream.Handle",
-			requestid.LogKey, requestid.Extract(c.UserContext()),
+		var (
+			err error
+
+			op     = "stream.Handle"
+			ctx    = c.UserContext()
+			logger = b.logger.With(
+				"operation", op,
+				requestid.LogKey, requestid.Extract(ctx),
+			)
 		)
+		defer func() {
+			if err != nil {
+				logger.Error("failed to handle stream", "error", err)
+			}
+		}()
 
 		c.Request().Header.Del(fiber.HeaderOrigin)
 
 		session := NewSession()
 		b.sessions[session.id] = session
 
-		_ = _upgrader.Upgrade(c.Context(), func(c *websocket.Conn) {
-			for {
-				data, ok := <-session.Receive()
-				if !ok {
-					delete(b.sessions, session.id)
-					return
-				}
-
-				err := c.WriteMessage(websocket.TextMessage, data)
-				if err != nil {
-					logger.Error("stream.WriteMessage", "error", err)
-				}
-
-			}
-		})
+		err = b.transport.Handle(ctx, c.Context(), session)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	}
