@@ -25,8 +25,8 @@ type Server struct {
 
 	db *database.DB
 
-	stream *stream.Stream
-	app    *fiber.App
+	broadcast *stream.Broadcast
+	app       *fiber.App
 
 	closer *closer.Closer
 }
@@ -97,7 +97,7 @@ func (srv *Server) configure(ctx context.Context) error {
 	}
 
 	// init stream
-	srv.stream = stream.New(srv.logger)
+	srv.broadcast = stream.NewBroadcast(srv.logger)
 
 	// init app
 	srv.app = fiber.New(fiber.Config{
@@ -175,14 +175,15 @@ func (srv *Server) setuoRoutes() {
 			}
 		}
 
-		v1.Get("/stream", srv.handleStream())
+		v1.Get("/stream", srv.authorizer(), srv.handleStream())
 	}
 }
 
 func (srv *Server) registerOnShutdown() {
 	srv.closer.Add(srv.app.ShutdownWithContext)
 	srv.closer.Add(func(ctx context.Context) error {
-		return srv.stream.Close()
+		srv.broadcast.Close()
+		return nil
 	})
 	srv.closer.Add(srv.db.Close)
 	srv.closer.Add(func(ctx context.Context) error {

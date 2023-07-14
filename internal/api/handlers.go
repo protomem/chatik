@@ -324,7 +324,7 @@ func (srv *Server) handleCreateChannel() fiber.Handler {
 		}
 
 		// TODO: logging
-		_ = stream.SendEvent(srv.stream, stream.NewChannelEvent(channelAgr))
+		_ = stream.SendEvent(srv.broadcast, stream.NewChannelEvent(channelAgr))
 
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 			"channel": channelAgr,
@@ -359,7 +359,7 @@ func (srv *Server) handleDeleteChannel() fiber.Handler {
 		}
 
 		// TODO: logging
-		_ = stream.SendEvent(srv.stream, stream.RemoveChannelEvent(channelID))
+		_ = stream.SendEvent(srv.broadcast, stream.RemoveChannelEvent(channelID))
 
 		return c.SendStatus(fiber.StatusNoContent)
 	}
@@ -512,7 +512,7 @@ func (srv *Server) handleCreateMessage() fiber.Handler {
 		}
 
 		// TODO: logging
-		_ = stream.SendEvent(srv.stream, stream.NewMessageEvent(messageAgr))
+		_ = stream.SendEvent(srv.broadcast, stream.NewMessageEvent(messageAgr))
 
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 			"message": messageAgr,
@@ -547,12 +547,12 @@ func (srv *Server) handleDeleteMessage() fiber.Handler {
 		}
 
 		// TODO: logging
-		_ = stream.SendEvent(srv.stream, stream.RemoveMessageEvent(messageID))
+		_ = stream.SendEvent(srv.broadcast, stream.RemoveMessageEvent(messageID))
 
 		return c.SendStatus(fiber.StatusNoContent)
 	}
 }
 
 func (srv *Server) handleStream() fiber.Handler {
-	return srv.stream.Handle()
+	return srv.broadcast.Handle()
 }

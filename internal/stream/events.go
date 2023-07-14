@@ -86,7 +86,7 @@ func RemoveChannelEvent(channelID uuid.UUID) Event[RemoveChannelPayload] {
 	)
 }
 
-func SendEvent[P PayloadOrder](s *Stream, e Event[P]) error {
+func SendEvent[P PayloadOrder](s *Broadcast, e Event[P]) error {
 	msg, err := json.Marshal(e)
 	if err != nil {
 		return fmt.Errorf("stream.SendEvent: marshal: %w", err)
