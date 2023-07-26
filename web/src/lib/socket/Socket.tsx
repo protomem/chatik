@@ -51,7 +51,7 @@ export function Socket({ children }: SocketProps) {
   useEffect(() => {
     setSocket(
       new WebSocket(
-        `ws://${import.meta.env.VITE_API_URL}/api/v1/stream?token=${token}`,
+        `ws://${import.meta.env.VITE_API_URL}/api/v1/stream/ws?token=${token}`,
       ),
     );
   }, []);

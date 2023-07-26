@@ -15,6 +15,9 @@ func (srv *Server) requestLogging() fiber.Handler {
 	conf := logger.ConfigDefault
 	conf.Output = srv.logger
 	conf.Format = "request [${time}] ${locals:requestid} ${status} - ${latency} ${method} ${path}"
+	conf.Done = func(c *fiber.Ctx, logString []byte) {
+		srv.logger.Info(string(logString))
+	}
 
 	return logger.New(conf)
 }

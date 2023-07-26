@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"time"
 
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/protomem/chatik/internal/agregate"
@@ -324,7 +326,7 @@ func (srv *Server) handleCreateChannel() fiber.Handler {
 		}
 
 		// TODO: logging
-		_ = stream.SendEvent(srv.broadcast, stream.NewChannelEvent(channelAgr))
+		_ = stream.SendEvent(srv.stream, stream.NewChannelEvent(channelAgr))
 
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 			"channel": channelAgr,
@@ -359,7 +361,7 @@ func (srv *Server) handleDeleteChannel() fiber.Handler {
 		}
 
 		// TODO: logging
-		_ = stream.SendEvent(srv.broadcast, stream.RemoveChannelEvent(channelID))
+		_ = stream.SendEvent(srv.stream, stream.RemoveChannelEvent(channelID))
 
 		return c.SendStatus(fiber.StatusNoContent)
 	}
@@ -512,7 +514,7 @@ func (srv *Server) handleCreateMessage() fiber.Handler {
 		}
 
 		// TODO: logging
-		_ = stream.SendEvent(srv.broadcast, stream.NewMessageEvent(messageAgr))
+		_ = stream.SendEvent(srv.stream, stream.NewMessageEvent(messageAgr))
 
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 			"message": messageAgr,
@@ -547,12 +549,41 @@ func (srv *Server) handleDeleteMessage() fiber.Handler {
 		}
 
 		// TODO: logging
-		_ = stream.SendEvent(srv.broadcast, stream.RemoveMessageEvent(messageID))
+		_ = stream.SendEvent(srv.stream, stream.RemoveMessageEvent(messageID))
 
 		return c.SendStatus(fiber.StatusNoContent)
 	}
 }
 
-func (srv *Server) handleStream() fiber.Handler {
-	return srv.broadcast.Handle()
+func (srv *Server) handleStreamWS() fiber.Handler {
+	return websocket.New(func(c *websocket.Conn) {
+		var (
+			op     = "api.handleStreamWS"
+			ctx    = context.Background()
+			logger = srv.logger.With(
+				"operation", op,
+				requestid.LogKey, c.Locals("requestid"),
+			)
+		)
+
+		subscriber, err := srv.stream.Subscribe(ctx)
+		if err != nil {
+			_ = c.Close()
+			return
+		}
+		msgs := subscriber()
+
+		for {
+			msg, ok := <-msgs
+			if !ok {
+				_ = c.Close()
+				return
+			}
+
+			err := c.WriteMessage(websocket.TextMessage, msg.Payload())
+			if err != nil {
+				logger.Error("failed to write message", "error", err)
+			}
+		}
+	})
 }

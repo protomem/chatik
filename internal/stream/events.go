@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	NewMessage    EventType = "newMessage"
-	RemoveMessage EventType = "removeMessage"
+	NewMessageEvn    EventType = "newMessage"
+	RemoveMessageEvn EventType = "removeMessage"
 
-	NewChannel    EventType = "newChannel"
-	RemoveChannel EventType = "removeChannel"
+	NewChannelEvn    EventType = "newChannel"
+	RemoveChannelEvn EventType = "removeChannel"
 )
 
 type EventType string
@@ -52,7 +52,7 @@ func NewEvent[P PayloadOrder](eType EventType, payload P) Event[P] {
 
 func NewMessageEvent(message agregate.Message) Event[NewMessagePayload] {
 	return NewEvent[NewMessagePayload](
-		NewMessage,
+		NewMessageEvn,
 		NewMessagePayload{
 			Message: message,
 		},
@@ -61,7 +61,7 @@ func NewMessageEvent(message agregate.Message) Event[NewMessagePayload] {
 
 func RemoveMessageEvent(messageID uuid.UUID) Event[RemoveMessagePayload] {
 	return NewEvent[RemoveMessagePayload](
-		RemoveMessage,
+		RemoveMessageEvn,
 		RemoveMessagePayload{
 			MessageID: messageID,
 		},
@@ -70,7 +70,7 @@ func RemoveMessageEvent(messageID uuid.UUID) Event[RemoveMessagePayload] {
 
 func NewChannelEvent(channel agregate.Channel) Event[NewChannelPayload] {
 	return NewEvent[NewChannelPayload](
-		NewChannel,
+		NewChannelEvn,
 		NewChannelPayload{
 			Channel: channel,
 		},
@@ -79,20 +79,29 @@ func NewChannelEvent(channel agregate.Channel) Event[NewChannelPayload] {
 
 func RemoveChannelEvent(channelID uuid.UUID) Event[RemoveChannelPayload] {
 	return NewEvent[RemoveChannelPayload](
-		RemoveChannel,
+		RemoveChannelEvn,
 		RemoveChannelPayload{
 			ChannelID: channelID,
 		},
 	)
 }
 
-func SendEvent[P PayloadOrder](s *Broadcast, e Event[P]) error {
+func SendEvent[P PayloadOrder](s *Stream, e Event[P]) error {
+	var (
+		err error
+
+		op = "stream.SendEvent"
+	)
+
 	msg, err := json.Marshal(e)
 	if err != nil {
-		return fmt.Errorf("stream.SendEvent: marshal: %w", err)
+		return fmt.Errorf("%s: marshal: %w", op, err)
 	}
 
-	s.SendMessage(msg)
+	err = s.Publish(NewMessage(msg))
+	if err != nil {
+		return fmt.Errorf("%s: publish: %w", op, err)
+	}
 
 	return nil
 }

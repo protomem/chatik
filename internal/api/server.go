@@ -25,8 +25,8 @@ type Server struct {
 
 	db *database.DB
 
-	broadcast *stream.Broadcast
-	app       *fiber.App
+	stream *stream.Stream
+	app    *fiber.App
 
 	closer *closer.Closer
 }
@@ -96,8 +96,8 @@ func (srv *Server) configure(ctx context.Context) error {
 		return fmt.Errorf("db: %w", err)
 	}
 
-	// init broadcast
-	srv.broadcast = stream.NewBroadcast(srv.logger, stream.NewWebSocket(srv.logger))
+	// init stream
+	srv.stream = stream.New(srv.logger)
 
 	// init app
 	srv.app = fiber.New(fiber.Config{
@@ -175,15 +175,14 @@ func (srv *Server) setuoRoutes() {
 			}
 		}
 
-		v1.Get("/stream", srv.authorizer(), srv.handleStream())
+		v1.Get("/stream/ws", srv.authorizer(), srv.handleStreamWS())
 	}
 }
 
 func (srv *Server) registerOnShutdown() {
 	srv.closer.Add(srv.app.ShutdownWithContext)
 	srv.closer.Add(func(ctx context.Context) error {
-		srv.broadcast.Close()
-		return nil
+		return srv.stream.Close()
 	})
 	srv.closer.Add(srv.db.Close)
 	srv.closer.Add(func(ctx context.Context) error {
