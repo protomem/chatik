@@ -176,6 +176,7 @@ func (srv *Server) setuoRoutes() {
 		}
 
 		v1.Get("/stream/ws", srv.authorizer(), srv.handleStreamWS())
+		v1.Get("/stream/sse", srv.authorizer(), srv.handleStreamSSE())
 	}
 }
 

@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bufio"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/contrib/websocket"
@@ -16,6 +18,7 @@ import (
 	"github.com/protomem/chatik/internal/stream"
 	"github.com/protomem/chatik/internal/validation"
 	"github.com/protomem/chatik/internal/validation/vrule"
+	"github.com/valyala/fasthttp"
 )
 
 func (srv *Server) handleHealth() fiber.Handler {
@@ -586,4 +589,55 @@ func (srv *Server) handleStreamWS() fiber.Handler {
 			}
 		}
 	})
+}
+
+func (s *Server) handleStreamSSE() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var (
+			op     = "api.handleStreamSSE"
+			ctx    = context.Background()
+			logger = s.logger.With(
+				"operation", op,
+				requestid.LogKey, c.Locals("requestid"),
+			)
+		)
+
+		c.Set("Content-Type", "text/event-stream")
+		c.Set("Cache-Control", "no-cache")
+		c.Set("Connection", "keep-alive")
+		c.Set("Transfer-Encoding", "chunked")
+		c.Context().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
+			subscriber, err := s.stream.Subscribe(ctx)
+			if err != nil {
+				return
+			}
+
+			msgs := subscriber()
+
+			for {
+				msg, ok := <-msgs
+				if !ok {
+					logger.Debug("channel closed")
+
+					break
+				}
+
+				_, err = fmt.Fprintf(w, "%s\n", msg.Payload())
+				if err != nil {
+					logger.Error("failed to write sse message", "error", err)
+
+					continue
+				}
+
+				err = w.Flush()
+				if err != nil {
+					logger.Error("failed to flush sse message", "error", err)
+
+					break
+				}
+			}
+		}))
+
+		return nil
+	}
 }
