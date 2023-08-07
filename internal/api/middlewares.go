@@ -12,11 +12,9 @@ import (
 )
 
 func (srv *Server) requestLogging() fiber.Handler {
-	conf := logger.ConfigDefault
-	conf.Output = srv.logger
-	conf.Format = "request [${time}] ${locals:requestid} ${status} - ${latency} ${method} ${path}"
-	conf.Done = func(c *fiber.Ctx, logString []byte) {
-		srv.logger.Info(string(logString))
+	conf := logger.Config{
+		Output: srv.logger,
+		Format: "request [${time}] ${locals:requestid} ${status} - ${latency} ${method} ${path}\n",
 	}
 
 	return logger.New(conf)
@@ -27,7 +25,7 @@ func (srv *Server) recovery() fiber.Handler {
 }
 
 func (srv *Server) CORS() fiber.Handler {
-	conf := cors.ConfigDefault
+	conf := cors.Config{}
 
 	return cors.New(conf)
 }
