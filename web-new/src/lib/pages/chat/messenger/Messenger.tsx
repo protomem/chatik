@@ -1,6 +1,7 @@
 import { Sheet } from "@mui/joy";
 import React from "react";
 import { ChannelsPane } from "../channels-pane/ChannelsPane.tsx";
+import { MessagesPane } from "../messages-pane/MessagesPane.tsx";
 
 export const Messenger: React.FC = () => {
   return (
@@ -35,6 +36,8 @@ export const Messenger: React.FC = () => {
       >
         <ChannelsPane />
       </Sheet>
+
+      <MessagesPane />
     </Sheet>
   );
 };

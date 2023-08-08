@@ -21,7 +21,7 @@ import { ChannelsItem } from "../channels-item/ChannelsItem";
 
 export const ChannelsPane: React.FC = () => {
   const [channels, setChannels] = useState(
-    useAppSelector((state) => selectChannels(state)),
+    useAppSelector((state) => selectChannels(state))
   );
   const currentChannel = useAppSelector((state) => selectCurrentChannel(state));
 
@@ -43,7 +43,7 @@ export const ChannelsPane: React.FC = () => {
       user: currentUser || ({} as UserEntity),
     };
     setChannels([newChannel]);
-  }, [mounted]);
+  }, [mounted, currentUser]);
 
   return (
     <Sheet
