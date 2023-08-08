@@ -9,3 +9,14 @@ export interface UserEntity extends BaseEntity {
   email: string;
   isVerified: boolean;
 }
+
+export interface ChannelEntity extends BaseEntity {
+  title: string;
+  user: UserEntity;
+}
+
+export interface MessageEntity extends BaseEntity {
+  content: string;
+  channelId: string;
+  user: UserEntity;
+}

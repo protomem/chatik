@@ -4,6 +4,7 @@ import {
   Button,
   FormControl,
   FormLabel,
+  GlobalStyles,
   IconButton,
   IconButtonProps,
   Input,
@@ -65,6 +66,16 @@ export const SignUpPage: React.FC = () => {
 
   return (
     <>
+      <GlobalStyles
+        styles={{
+          ":root": {
+            "--Collapsed-breakpoint": "769px", // form will stretch when viewport is below `769px`
+            "--Cover-width": "40vw", // must be `vw` only
+            "--Form-maxWidth": "700px",
+            "--Transition-duration": "0.4s", // set to `none` to disable transition
+          },
+        }}
+      />
       <Box
         sx={(theme) => ({
           width:
