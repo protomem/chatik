@@ -1,13 +1,21 @@
-import { Box, Button, GlobalStyles, Sheet, Typography } from "@mui/joy";
+import { Box, Button, GlobalStyles, Sheet, Switch, Typography } from "@mui/joy";
 import React from "react";
 import { ColorSchemeToggle } from "../color-scheme-toggle/ColorSchemeToggle";
 import { useAppDispatch, useAppSelector } from "../../../feature/hooks";
 import { selectCurrentUser } from "../../../feature/auth/auth.selectors";
 import { authActions } from "../../../feature/auth/auth.slice";
+import {
+  EventSourceType,
+  eventsActions,
+} from "../../../feature/events/events.slice";
+import { selectEventsSourceType } from "../../../feature/events/events.selectors";
 
 export const Header: React.FC = () => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector((state) => selectCurrentUser(state));
+  const eventsSourceType = useAppSelector((state) =>
+    selectEventsSourceType(state),
+  );
 
   return (
     <Sheet
@@ -68,11 +76,53 @@ export const Header: React.FC = () => {
           alignItems: "center",
         }}
       >
+        <Switch
+          size="sm"
+          color="primary"
+          sx={{ mr: 3 }}
+          startDecorator={
+            <Typography
+              fontWeight={"lg"}
+              color={
+                eventsSourceType === EventSourceType.SSE ? "primary" : "neutral"
+              }
+            >
+              sse
+            </Typography>
+          }
+          endDecorator={
+            <Typography
+              fontWeight={"lg"}
+              color={
+                eventsSourceType === EventSourceType.WEBSOCKET
+                  ? "primary"
+                  : "neutral"
+              }
+            >
+              ws
+            </Typography>
+          }
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+            !event.target.checked
+              ? dispatch(eventsActions.setSourceType(EventSourceType.SSE))
+              : dispatch(
+                  eventsActions.setSourceType(EventSourceType.WEBSOCKET),
+                );
+          }}
+          checked={eventsSourceType !== EventSourceType.SSE}
+        />
         <Typography>{currentUser?.nickname}</Typography>
-        <Button size="sm" variant="soft" color="danger" onClick={(event) => {
-          event.preventDefault();
-          dispatch(authActions.clearCredentials());
-        }}>logout</Button>
+        <Button
+          size="sm"
+          variant="soft"
+          color="danger"
+          onClick={(event) => {
+            event.preventDefault();
+            dispatch(authActions.clearCredentials());
+          }}
+        >
+          logout
+        </Button>
         <ColorSchemeToggle id={undefined} />
       </Box>
     </Sheet>

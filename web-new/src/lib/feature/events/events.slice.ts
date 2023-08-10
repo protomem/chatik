@@ -1,8 +1,9 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
+import { eventsStorage } from "./events.storage";
 
 export enum EventSourceType {
-  WEBSOCKET,
-  SSE,
+  WEBSOCKET = "WEBSOCKET",
+  SSE = "SSE",
 }
 
 interface EventsState {
@@ -10,7 +11,7 @@ interface EventsState {
 }
 
 const initialState: EventsState = {
-  sourceType: EventSourceType.SSE,
+  sourceType: eventsStorage.getEventsType(),
 };
 
 const eventsSlice = createSlice({
@@ -19,6 +20,7 @@ const eventsSlice = createSlice({
   reducers: {
     setSourceType: (state, { payload }: PayloadAction<EventSourceType>) => {
       state.sourceType = payload;
+      eventsStorage.setEventsType(payload);
     },
   },
 });

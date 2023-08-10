@@ -21,11 +21,11 @@ import { ChannelsItem } from "../channels-item/ChannelsItem";
 
 export const ChannelsPane: React.FC = () => {
   const [channels, setChannels] = useState(
-    useAppSelector((state) => selectChannels(state))
+    useAppSelector((state) => selectChannels(state)),
   );
   const currentChannel = useAppSelector((state) => selectCurrentChannel(state));
 
-  const [mounted, setMounted] = useState(true);
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);

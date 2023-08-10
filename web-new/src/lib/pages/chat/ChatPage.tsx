@@ -2,6 +2,7 @@ import { Box, GlobalStyles } from "@mui/joy";
 import React from "react";
 import { Header } from "./header/Header";
 import { Messenger } from "./messenger/Messenger";
+import { Events } from "./events/Events";
 
 export const ChatPage: React.FC = () => {
   return (
@@ -20,7 +21,9 @@ export const ChatPage: React.FC = () => {
       <Box sx={{ display: "flex", minHeight: "100dvh" }}>
         <Header />
         <Box component="main" className="MainContent" flex={1}>
-          <Messenger />
+          <Events>
+            <Messenger />
+          </Events>
         </Box>
       </Box>
     </>
