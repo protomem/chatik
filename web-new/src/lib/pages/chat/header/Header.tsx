@@ -121,6 +121,7 @@ export const Header: React.FC = () => {
           onClick={(event) => {
             event.preventDefault();
             dispatch(authActions.clearCredentials());
+            dispatch(eventsActions.setSourceType(EventSourceType.SSE))
           }}
         >
           logout

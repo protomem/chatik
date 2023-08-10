@@ -1,64 +1,39 @@
 import { Box, Sheet, Stack } from "@mui/joy";
-import React from "react";
+import React, { useEffect } from "react";
 import { MessagesPaneHeader } from "../messages-pane-header/MessagesPaneHeader";
-import { useAppSelector } from "../../../feature/hooks";
-import { selectCurrentUser } from "../../../feature/auth/auth.selectors";
-import { MessageEntity, UserEntity } from "../../../entities/entities";
+import { useAppDispatch, useAppSelector } from "../../../feature/hooks";
+import {
+  selectAccessToken,
+  selectCurrentUser,
+} from "../../../feature/auth/auth.selectors";
 import { MessageInput } from "../message-input/MessageInput";
 import { MessagesItem } from "../messages-item/MessagesItem";
 import { selectCurrentChannel } from "../../../feature/channels/channels.selectors";
+import { selectMessages } from "../../../feature/messages/messages.selectors";
+import { useGetAllMessagesQuery } from "../../../feature/messages/messages.api";
+import { messagesActions } from "../../../feature/messages/messages.slice";
 
 export const MessagesPane: React.FC = () => {
+  const dispatch = useAppDispatch();
   const currentUser = useAppSelector((state) => selectCurrentUser(state));
+  const accessToken = useAppSelector((state) => selectAccessToken(state));
   const currentChannel = useAppSelector((state) => selectCurrentChannel(state));
 
-  const messages = [
+  const messages = useAppSelector((state) => selectMessages(state));
+
+  const { data, error } = useGetAllMessagesQuery(
     {
-      id: "1",
-      createdAt: new Date(),
-      content: "Hello",
-      user: currentUser || ({} as UserEntity),
+      channelId: currentChannel?.id || "",
+      accessToken,
     },
-    {
-      id: "2",
-      createdAt: new Date(),
-      content: "How are you?",
-      user: {
-        id: "1",
-        nickname: "John",
-      },
-    },
-    {
-      id: "3",
-      createdAt: new Date(),
-      content: "Hello",
-      user: currentUser || ({} as UserEntity),
-    },
-    {
-      id: "4",
-      createdAt: new Date(),
-      content: "How are you?",
-      user: {
-        id: "1",
-        nickname: "John",
-      },
-    },
-    {
-      id: "6",
-      createdAt: new Date(),
-      content: "Hello",
-      user: currentUser || ({} as UserEntity),
-    },
-    {
-      id: "7",
-      createdAt: new Date(),
-      content: "How are you?",
-      user: {
-        id: "1",
-        nickname: "John",
-      },
-    },
-  ] as MessageEntity[];
+    { skip: !currentChannel, refetchOnMountOrArgChange: true },
+  );
+
+  useEffect(() => {
+    if (!!data) dispatch(messagesActions.setMessages(data.messages));
+
+    if (!!error) dispatch(messagesActions.setMessages([]));
+  }, [dispatch, data, error]);
 
   return (
     <Sheet
