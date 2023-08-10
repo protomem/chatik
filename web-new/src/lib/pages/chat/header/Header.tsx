@@ -78,13 +78,15 @@ export const Header: React.FC = () => {
       >
         <Switch
           size="sm"
-          color="primary"
+          color={
+            eventsSourceType === EventSourceType.SSE ? "success" : "primary"
+          }
           sx={{ mr: 3 }}
           startDecorator={
             <Typography
               fontWeight={"lg"}
               color={
-                eventsSourceType === EventSourceType.SSE ? "primary" : "neutral"
+                eventsSourceType === EventSourceType.SSE ? "success" : "neutral"
               }
             >
               sse
