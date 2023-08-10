@@ -3,23 +3,14 @@ import React from "react";
 import { MessagesPaneHeader } from "../messages-pane-header/MessagesPaneHeader";
 import { useAppSelector } from "../../../feature/hooks";
 import { selectCurrentUser } from "../../../feature/auth/auth.selectors";
-import {
-  ChannelEntity,
-  MessageEntity,
-  UserEntity,
-} from "../../../entities/entities";
+import { MessageEntity, UserEntity } from "../../../entities/entities";
 import { MessageInput } from "../message-input/MessageInput";
 import { MessagesItem } from "../messages-item/MessagesItem";
+import { selectCurrentChannel } from "../../../feature/channels/channels.selectors";
 
 export const MessagesPane: React.FC = () => {
   const currentUser = useAppSelector((state) => selectCurrentUser(state));
-  const currentChannel: ChannelEntity = {
-    id: "1",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    title: "New channel",
-    user: currentUser || ({} as UserEntity),
-  };
+  const currentChannel = useAppSelector((state) => selectCurrentChannel(state));
 
   const messages = [
     {
@@ -52,7 +43,7 @@ export const MessagesPane: React.FC = () => {
         nickname: "John",
       },
     },
-{
+    {
       id: "6",
       createdAt: new Date(),
       content: "Hello",

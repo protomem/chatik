@@ -1,6 +1,8 @@
 import React from "react";
 import { ChannelEntity } from "../../../entities/entities";
 import { ListDivider, ListItem, ListItemButton, Typography } from "@mui/joy";
+import { useAppDispatch } from "../../../feature/hooks";
+import { channelsActions } from "../../../feature/channels/channels.slice";
 
 interface ChannelsItemProps {
   channel: ChannelEntity;
@@ -11,6 +13,8 @@ export const ChannelsItem: React.FC<ChannelsItemProps> = ({
   channel,
   selected,
 }) => {
+  const dispatch = useAppDispatch();
+
   return (
     <>
       <ListItem>
@@ -22,6 +26,9 @@ export const ChannelsItem: React.FC<ChannelsItemProps> = ({
             alignItems: "initial",
             gap: 1,
             fontWeight: "normal",
+          }}
+          onClick={() => {
+            dispatch(channelsActions.setCurrentChannel(channel));
           }}
         >
           <Typography sx={{ my: 1 }}>{channel.title}</Typography>

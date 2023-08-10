@@ -8,42 +8,30 @@ import {
   Stack,
   Typography,
 } from "@mui/joy";
-import React, { useEffect, useState } from "react";
-import { useAppSelector } from "../../../feature/hooks";
+import React, { useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "../../../feature/hooks";
 import {
   selectChannels,
   selectCurrentChannel,
 } from "../../../feature/channels/channels.selectors";
 import { Add, ArrowDropDownOutlined, Search } from "@mui/icons-material";
-import { selectCurrentUser } from "../../../feature/auth/auth.selectors";
-import { ChannelEntity, UserEntity } from "../../../entities/entities";
+import { selectAccessToken } from "../../../feature/auth/auth.selectors";
 import { ChannelsItem } from "../channels-item/ChannelsItem";
+import { useGetAllChannelsQuery } from "../../../feature/channels/channels.api";
+import { channelsActions } from "../../../feature/channels/channels.slice";
 
 export const ChannelsPane: React.FC = () => {
-  const [channels, setChannels] = useState(
-    useAppSelector((state) => selectChannels(state)),
-  );
+  const dispatch = useAppDispatch();
+  const accessToken = useAppSelector((state) => selectAccessToken(state));
+  const channels = useAppSelector((state) => selectChannels(state));
   const currentChannel = useAppSelector((state) => selectCurrentChannel(state));
 
-  const [mounted, setMounted] = useState(false);
+  const { data } = useGetAllChannelsQuery({ accessToken });
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // TODO: Load channels from server
-  const currentUser = useAppSelector((state) => selectCurrentUser(state));
-  useEffect(() => {
-    if (!mounted) return;
-
-    const newChannel: ChannelEntity = {
-      id: "1",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      title: "New channel",
-      user: currentUser || ({} as UserEntity),
-    };
-    setChannels([newChannel]);
-  }, [mounted, currentUser]);
+    if (!!data) {
+      dispatch(channelsActions.setChannels(data.channels));
+    }
+  }, [data]);
 
   return (
     <Sheet
@@ -103,7 +91,7 @@ export const ChannelsPane: React.FC = () => {
       >
         <ListDivider sx={{ margin: 0 }} />
         {channels.map((channel) => (
-          <ChannelsItem key={channel.id} channel={channel} selected={false} />
+          <ChannelsItem key={channel.id} channel={channel} selected={channel.id === currentChannel?.id} />
         ))}
       </List>
     </Sheet>
