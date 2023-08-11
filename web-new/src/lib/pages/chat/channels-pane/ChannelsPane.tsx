@@ -8,7 +8,7 @@ import {
   Stack,
   Typography,
 } from "@mui/joy";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../feature/hooks";
 import {
   selectChannels,
@@ -19,6 +19,7 @@ import { selectAccessToken } from "../../../feature/auth/auth.selectors";
 import { ChannelsItem } from "../channels-item/ChannelsItem";
 import { useGetAllChannelsQuery } from "../../../feature/channels/channels.api";
 import { channelsActions } from "../../../feature/channels/channels.slice";
+import { NewChannelForm } from "../new-channel-form/NewChannelForm";
 
 export const ChannelsPane: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -26,12 +27,14 @@ export const ChannelsPane: React.FC = () => {
   const channels = useAppSelector((state) => selectChannels(state));
   const currentChannel = useAppSelector((state) => selectCurrentChannel(state));
 
+  const [openNewChannelForm, setOpenNewChannelForm] = useState(false);
+
   const { data } = useGetAllChannelsQuery({ accessToken });
   useEffect(() => {
-    if (!!data) {
+    if (data) {
       dispatch(channelsActions.setChannels(data.channels));
     }
-  }, [data]);
+  }, [data, dispatch]);
 
   return (
     <Sheet
@@ -68,9 +71,16 @@ export const ChannelsPane: React.FC = () => {
           aria-label="add"
           color="neutral"
           size="sm"
+          onClick={() => {
+            setOpenNewChannelForm(true);
+          }}
         >
           <Add />
         </IconButton>
+        <NewChannelForm
+          open={openNewChannelForm}
+          setOpen={setOpenNewChannelForm}
+        />
       </Stack>
 
       <Box px={2} pb={1.5} mr={2} mb={2}>
@@ -91,7 +101,11 @@ export const ChannelsPane: React.FC = () => {
       >
         <ListDivider sx={{ margin: 0 }} />
         {channels.map((channel) => (
-          <ChannelsItem key={channel.id} channel={channel} selected={channel.id === currentChannel?.id} />
+          <ChannelsItem
+            key={channel.id}
+            channel={channel}
+            selected={channel.id === currentChannel?.id}
+          />
         ))}
       </List>
     </Sheet>

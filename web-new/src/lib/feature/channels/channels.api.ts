@@ -9,6 +9,15 @@ interface GetAllChannelsResponse {
   channels: ChannelEntity[];
 }
 
+interface CreateChannelRequest {
+  title: string;
+  accessToken: string;
+}
+
+interface CreateChannelResponse {
+  channel: ChannelEntity;
+}
+
 export const channelsApi = createApi({
   reducerPath: "channelsApi",
   baseQuery: fetchBaseQuery({
@@ -26,7 +35,23 @@ export const channelsApi = createApi({
         },
       }),
     }),
+
+    createChannel: builder.mutation<
+      CreateChannelResponse,
+      CreateChannelRequest
+    >({
+      query: ({ title, accessToken }) => ({
+        url: "/",
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: {
+          title,
+        },
+      }),
+    }),
   }),
 });
 
-export const { useGetAllChannelsQuery } = channelsApi;
+export const { useGetAllChannelsQuery, useCreateChannelMutation } = channelsApi;
