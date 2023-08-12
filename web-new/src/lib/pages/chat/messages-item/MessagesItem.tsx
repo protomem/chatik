@@ -1,17 +1,27 @@
 import React, { useState } from "react";
-import { MessageEntity } from "../../../entities/entities";
+import { ChannelEntity, MessageEntity } from "../../../entities/entities";
 import { Box, IconButton, Sheet, Stack, Typography } from "@mui/joy";
 import { useAppSelector } from "../../../feature/hooks";
-import { selectCurrentUser } from "../../../feature/auth/auth.selectors";
+import {
+  selectAccessToken,
+  selectCurrentUser,
+} from "../../../feature/auth/auth.selectors";
 import { DeleteRounded } from "@mui/icons-material";
+import { useDeleteMessageMutation } from "../../../feature/messages/messages.api";
 
 interface MessagesItemProps {
+  channel: ChannelEntity;
   message: MessageEntity;
 }
 
-export const MessagesItem: React.FC<MessagesItemProps> = ({ message }) => {
+export const MessagesItem: React.FC<MessagesItemProps> = ({
+  channel,
+  message,
+}) => {
+  const accessToken = useAppSelector((state) => selectAccessToken(state));
   const currentUser = useAppSelector((state) => selectCurrentUser(state));
   const [isHovered, setIsHovered] = useState(false);
+  const [deleteMessage] = useDeleteMessageMutation();
 
   return (
     <Box>
@@ -73,7 +83,17 @@ export const MessagesItem: React.FC<MessagesItemProps> = ({ message }) => {
               variant="soft"
               color="danger"
               size="sm"
-              onClick={() => {}}
+              onClick={() => {
+                deleteMessage({
+                  messageId: message.id,
+                  channelId: channel.id,
+                  accessToken,
+                })
+                  .unwrap()
+                  .catch((err) => {
+                    alert(err);
+                  });
+              }}
             >
               <DeleteRounded />
             </IconButton>

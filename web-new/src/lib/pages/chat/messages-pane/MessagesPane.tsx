@@ -73,7 +73,7 @@ export const MessagesPane: React.FC = () => {
                     spacing={2}
                     flexDirection={isYou ? "row-reverse" : "row"}
                   >
-                    <MessagesItem message={message} />
+                    <MessagesItem channel={currentChannel} message={message} />
                   </Stack>
                 );
               })}
