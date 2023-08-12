@@ -77,6 +77,7 @@ export const Header: React.FC = () => {
         }}
       >
         <Switch
+          disabled
           size="sm"
           color={
             eventsSourceType === EventSourceType.SSE ? "success" : "primary"
@@ -121,7 +122,7 @@ export const Header: React.FC = () => {
           onClick={(event) => {
             event.preventDefault();
             dispatch(authActions.clearCredentials());
-            dispatch(eventsActions.setSourceType(EventSourceType.SSE))
+            dispatch(eventsActions.setSourceType(EventSourceType.SSE));
           }}
         >
           logout

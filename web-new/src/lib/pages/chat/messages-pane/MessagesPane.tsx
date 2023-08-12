@@ -58,21 +58,25 @@ export const MessagesPane: React.FC = () => {
               py: 2.5,
               overflowY: "scroll",
               flexDirection: "column-reverse",
+              gap: 2,
             }}
           >
-            {messages.map((message) => {
-              const isYou = message.user.id === currentUser?.id;
-              return (
-                <Stack
-                  key={message.id}
-                  direction={"row"}
-                  spacing={2}
-                  flexDirection={isYou ? "row-reverse" : "row"}
-                >
-                  <MessagesItem message={message} />
-                </Stack>
-              );
-            })}
+            {messages
+              .slice(0)
+              .reverse()
+              .map((message) => {
+                const isYou = message.user.id === currentUser?.id;
+                return (
+                  <Stack
+                    key={message.id}
+                    direction={"row"}
+                    spacing={2}
+                    flexDirection={isYou ? "row-reverse" : "row"}
+                  >
+                    <MessagesItem message={message} />
+                  </Stack>
+                );
+              })}
           </Box>
 
           <MessageInput channel={currentChannel} />

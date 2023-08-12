@@ -65,7 +65,6 @@ export const ChannelsPane: React.FC = () => {
           <ArrowDropDownOutlined />
         </IconButton>
 
-        {/* TODO: Add modal menu for create channel */}
         <IconButton
           variant="outlined"
           aria-label="add"
@@ -85,6 +84,7 @@ export const ChannelsPane: React.FC = () => {
 
       <Box px={2} pb={1.5} mr={2} mb={2}>
         <Input
+          disabled
           size="sm"
           startDecorator={<Search />}
           placeholder="Search"

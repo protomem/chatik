@@ -10,6 +10,16 @@ interface GetAllMessagesResponse {
   messages: MessageEntity[];
 }
 
+interface CreateMessageRequest {
+  channelId: string;
+  content: string;
+  accessToken: string;
+}
+
+interface CreateMessageResponse {
+  message: MessageEntity;
+}
+
 export const messagesApi = createApi({
   reducerPath: "messagesApi",
   baseQuery: fetchBaseQuery({
@@ -28,7 +38,21 @@ export const messagesApi = createApi({
         },
       }),
     }),
+
+    createMessage: builder.mutation<
+      CreateMessageResponse,
+      CreateMessageRequest
+    >({
+      query: ({ channelId, content, accessToken }) => ({
+        url: `/${channelId}/messages`,
+        method: "POST",
+        body: { content },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }),
+    }),
   }),
 });
 
-export const { useGetAllMessagesQuery } = messagesApi;
+export const { useGetAllMessagesQuery, useCreateMessageMutation } = messagesApi;

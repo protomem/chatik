@@ -2,6 +2,9 @@ import React from "react";
 import { ChannelEntity } from "../../../entities/entities";
 import { Box, Button, FormControl, Stack, Textarea } from "@mui/joy";
 import { Send } from "@mui/icons-material";
+import { useAppSelector } from "../../../feature/hooks";
+import { selectAccessToken } from "../../../feature/auth/auth.selectors";
+import { useCreateMessageMutation } from "../../../feature/messages/messages.api";
 
 interface FormElements extends HTMLFormControlsCollection {
   content: HTMLTextAreaElement;
@@ -15,7 +18,10 @@ interface MessageInputProps {
   channel: ChannelEntity;
 }
 
-export const MessageInput: React.FC<MessageInputProps> = () => {
+export const MessageInput: React.FC<MessageInputProps> = ({ channel }) => {
+  const accessToken = useAppSelector((state) => selectAccessToken(state));
+  const [createMessage] = useCreateMessageMutation();
+
   return (
     <Box sx={{ px: 2, pb: 3 }}>
       <form
@@ -26,7 +32,15 @@ export const MessageInput: React.FC<MessageInputProps> = () => {
             content: event.currentTarget.elements.content.value,
           };
 
-          alert(`Message: ${data.content}`);
+          createMessage({
+            channelId: channel.id,
+            content: data.content,
+            accessToken,
+          })
+            .unwrap()
+            .catch((err) => {
+              alert(err);
+            });
 
           event.currentTarget.reset();
         }}
