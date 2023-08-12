@@ -18,6 +18,13 @@ interface CreateChannelResponse {
   channel: ChannelEntity;
 }
 
+interface DeleteChannelRequest {
+  channelId: string;
+  accessToken: string;
+}
+
+interface DeleteChannelResponse {}
+
 export const channelsApi = createApi({
   reducerPath: "channelsApi",
   baseQuery: fetchBaseQuery({
@@ -51,7 +58,24 @@ export const channelsApi = createApi({
         },
       }),
     }),
+
+    deleteChannel: builder.mutation<
+      DeleteChannelResponse,
+      DeleteChannelRequest
+    >({
+      query: ({ channelId, accessToken }) => ({
+        url: `/${channelId}`,
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }),
+    }),
   }),
 });
 
-export const { useGetAllChannelsQuery, useCreateChannelMutation } = channelsApi;
+export const {
+  useGetAllChannelsQuery,
+  useCreateChannelMutation,
+  useDeleteChannelMutation,
+} = channelsApi;
