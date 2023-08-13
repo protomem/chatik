@@ -622,7 +622,7 @@ func (s *Server) handleStreamSSE() fiber.Handler {
 					break
 				}
 
-				_, err = fmt.Fprintf(w, "%s\n", msg.Payload())
+				_, err = fmt.Fprintf(w, "data: %s\n\n", msg.Payload())
 				if err != nil {
 					logger.Error("failed to write sse message", "error", err)
 

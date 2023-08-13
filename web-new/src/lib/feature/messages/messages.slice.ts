@@ -20,6 +20,12 @@ const messagesSlice = createSlice({
     addMessage(state, { payload }: PayloadAction<MessageEntity>) {
       state.messages.push(payload);
     },
+
+    removeMessage(state, { payload }: PayloadAction<string>) {
+      state.messages = state.messages.filter(
+        (message) => message.id !== payload,
+      );
+    },
   },
 });
 

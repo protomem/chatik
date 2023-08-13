@@ -3,7 +3,7 @@ import { EventSourceType } from "./events.slice";
 export const eventsStorage = {
   getEventsType: (): EventSourceType => {
     const eventsType = localStorage.getItem("eventsType");
-    if (eventsType === "") return EventSourceType.SSE;
+    if (eventsType === "" || eventsType === null) return EventSourceType.SSE;
 
     return eventsType as EventSourceType;
   },
