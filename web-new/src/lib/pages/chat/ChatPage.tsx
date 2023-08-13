@@ -21,9 +21,8 @@ export const ChatPage: React.FC = () => {
       <Box sx={{ display: "flex", minHeight: "100dvh" }}>
         <Header />
         <Box component="main" className="MainContent" flex={1}>
-          <Events>
-            <Messenger />
-          </Events>
+          <Events />
+          <Messenger />
         </Box>
       </Box>
     </>

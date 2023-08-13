@@ -13,11 +13,7 @@ import {
 import { messagesActions } from "../../../feature/messages/messages.slice";
 import { channelsActions } from "../../../feature/channels/channels.slice";
 
-interface SSEProps {
-  children: React.ReactNode;
-}
-
-export const SSE: React.FC<SSEProps> = ({ children }) => {
+export const SSE: React.FC = () => {
   const dispatch = useAppDispatch();
   const accessToken = useAppSelector((state) => selectAccessToken(state));
   const currentChannel = useAppSelector((state) => selectCurrentChannel(state));
@@ -79,5 +75,5 @@ export const SSE: React.FC<SSEProps> = ({ children }) => {
     };
   }, [sse, currentChannel]);
 
-  return <>{children}</>;
+  return <></>;
 };

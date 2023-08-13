@@ -24,7 +24,9 @@ const channelsSlice = createSlice({
     },
 
     addChannel(state, { payload }: PayloadAction<ChannelEntity>) {
-      state.channels.push(payload);
+      if (!state.channels.find((channel) => channel.id === payload.id)) {
+        state.channels.push(payload);
+      }
     },
 
     removeChannel(state, { payload }: PayloadAction<string>) {

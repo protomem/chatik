@@ -569,6 +569,8 @@ func (srv *Server) handleStreamWS() fiber.Handler {
 			)
 		)
 
+		_ = c.SetCompressionLevel(7)
+
 		subscriber, err := srv.stream.Subscribe(ctx)
 		if err != nil {
 			_ = c.Close()

@@ -18,7 +18,9 @@ const messagesSlice = createSlice({
     },
 
     addMessage(state, { payload }: PayloadAction<MessageEntity>) {
-      state.messages.push(payload);
+      if (!state.messages.find((message) => message.id === payload.id)) {
+        state.messages.push(payload);
+      }
     },
 
     removeMessage(state, { payload }: PayloadAction<string>) {

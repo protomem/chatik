@@ -77,7 +77,6 @@ export const Header: React.FC = () => {
         }}
       >
         <Switch
-          disabled
           size="sm"
           color={
             eventsSourceType === EventSourceType.SSE ? "success" : "primary"
