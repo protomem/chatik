@@ -7,7 +7,6 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var _ Logger = (*Zap)(nil)
@@ -16,23 +15,14 @@ type Zap struct {
 	logger *zap.SugaredLogger
 }
 
-func NewZap(lvlStr string, file string) (*Zap, error) {
+func NewZap(lvlStr string) (*Zap, error) {
 	lvl, err := zapcore.ParseLevel(lvlStr)
 	if err != nil {
 		return nil, fmt.Errorf("zap.New: parse level: %w", err)
 	}
 
-	fsSync := &lumberjack.Logger{
-		Filename:   file,
-		MaxSize:    50,
-		MaxBackups: 3,
-		MaxAge:     7,
-		LocalTime:  true,
-		Compress:   true,
-	}
-
 	enc := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
-	sync := zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stderr), zapcore.AddSync(fsSync))
+	sync := zapcore.AddSync(os.Stderr)
 	core := zapcore.NewCore(enc, sync, lvl)
 
 	logger := zap.New(core).Sugar()

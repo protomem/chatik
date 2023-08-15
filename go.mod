@@ -15,7 +15,6 @@ require (
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.7.0
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (

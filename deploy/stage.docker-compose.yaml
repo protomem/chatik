@@ -27,8 +27,6 @@ services:
       DB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@db:27017/?authMechanism=SCRAM-SHA-256
     depends_on:
       - db
-    # volumes:
-    #   - /var/log/chatik:./logs
 
   db:
     image: mongo:4.4

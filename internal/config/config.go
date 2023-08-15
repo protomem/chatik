@@ -18,7 +18,6 @@ type Config struct {
 
 	Log struct {
 		Level string `env:"LEVEL,notEmpty"`
-		File  string `env:"FILE,notEmpty"`
 	} `envPrefix:"LOG_"`
 
 	DB struct {
