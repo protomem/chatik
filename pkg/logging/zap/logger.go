@@ -1,21 +1,22 @@
-package logging
+package zap
 
 import (
 	"errors"
 	"fmt"
 	"os"
 
+	"github.com/protomem/chatik/pkg/logging"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-var _ Logger = (*Zap)(nil)
+var _ logging.Logger = (*Logger)(nil)
 
-type Zap struct {
+type Logger struct {
 	logger *zap.SugaredLogger
 }
 
-func NewZap(lvlStr string) (*Zap, error) {
+func New(lvlStr string) (*Logger, error) {
 	lvl, err := zapcore.ParseLevel(lvlStr)
 	if err != nil {
 		return nil, fmt.Errorf("zap.New: parse level: %w", err)
@@ -27,32 +28,32 @@ func NewZap(lvlStr string) (*Zap, error) {
 
 	logger := zap.New(core).Sugar()
 
-	return &Zap{logger: logger}, nil
+	return &Logger{logger: logger}, nil
 }
 
-func (l *Zap) With(args ...any) Logger {
-	return &Zap{logger: l.logger.With(args...)}
+func (l *Logger) With(args ...any) logging.Logger {
+	return &Logger{logger: l.logger.With(args...)}
 }
 
-func (l *Zap) Debug(msg string, args ...any) {
+func (l *Logger) Debug(msg string, args ...any) {
 	l.logger.Debugw(msg, args...)
 }
 
-func (l *Zap) Info(msg string, args ...any) {
+func (l *Logger) Info(msg string, args ...any) {
 	l.logger.Infow(msg, args...)
 }
 
-func (l *Zap) Error(msg string, args ...any) {
+func (l *Logger) Error(msg string, args ...any) {
 	l.logger.Errorw(msg, args...)
 }
 
-func (l *Zap) Write(p []byte) (int, error) {
+func (l *Logger) Write(p []byte) (int, error) {
 	l.Info(string(p))
 
 	return len(p), nil
 }
 
-func (l *Zap) Sync() error {
+func (l *Logger) Sync() error {
 	err := l.logger.Sync()
 	if err != nil {
 		var pErr *os.PathError

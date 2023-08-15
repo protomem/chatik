@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/protomem/chatik/internal/logging"
+	"github.com/protomem/chatik/pkg/logging"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"

@@ -8,7 +8,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
-	"github.com/protomem/chatik/internal/logging"
+	"github.com/protomem/chatik/pkg/logging"
 )
 
 type Subscriber func() <-chan *Message

@@ -13,10 +13,11 @@ import (
 	"github.com/protomem/chatik/internal/closer"
 	"github.com/protomem/chatik/internal/config"
 	"github.com/protomem/chatik/internal/database"
-	"github.com/protomem/chatik/internal/logging"
 	"github.com/protomem/chatik/internal/requestid"
 	"github.com/protomem/chatik/internal/stream"
 	"github.com/protomem/chatik/internal/validation"
+	"github.com/protomem/chatik/pkg/logging"
+	"github.com/protomem/chatik/pkg/logging/zap"
 )
 
 type Server struct {
@@ -70,7 +71,7 @@ func (srv *Server) configure(ctx context.Context) error {
 	var err error
 
 	// init logger
-	srv.logger, err = logging.NewZap(srv.conf.Log.Level)
+	srv.logger, err = zap.New(srv.conf.Log.Level)
 	if err != nil {
 		return fmt.Errorf("new logger: %w", err)
 	}
