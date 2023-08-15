@@ -1,6 +1,9 @@
 package logging
 
-import "io"
+import (
+	"context"
+	"io"
+)
 
 type Logger interface {
 	With(args ...any) Logger
@@ -11,5 +14,5 @@ type Logger interface {
 
 	io.Writer
 
-	Sync() error
+	Sync(context.Context) error
 }

@@ -1,6 +1,7 @@
 package zap
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -53,7 +54,7 @@ func (l *Logger) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (l *Logger) Sync() error {
+func (l *Logger) Sync(_ context.Context) error {
 	err := l.logger.Sync()
 	if err != nil {
 		var pErr *os.PathError

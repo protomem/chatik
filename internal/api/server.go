@@ -188,7 +188,7 @@ func (srv *Server) registerOnShutdown() {
 	})
 	srv.closer.Add(srv.db.Close)
 	srv.closer.Add(func(ctx context.Context) error {
-		return srv.logger.Sync()
+		return srv.logger.Sync(ctx)
 	})
 }
 

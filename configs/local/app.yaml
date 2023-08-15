@@ -1,0 +1,13 @@
+http:
+  addr: ":8080"
+
+log:
+  level: debug
+
+auth:
+  secret: "secret"
+
+mongo:
+  uri: "mongodb://localhost:27017"
+  user: "admin"
+  password: "123456789"
