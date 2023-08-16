@@ -11,6 +11,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/protomem/chatik/internal/domain/port"
+	"github.com/protomem/chatik/internal/domain/usecase"
+	httphandl "github.com/protomem/chatik/internal/infra/handler/http"
+	mongorepo "github.com/protomem/chatik/internal/infra/repository/mongo"
 	"github.com/protomem/chatik/pkg/closer"
 	"github.com/protomem/chatik/pkg/logging"
 	"github.com/protomem/chatik/pkg/logging/zap"
@@ -19,11 +23,62 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+type (
+	Repositories struct {
+		port.UserRepository
+	}
+
+	UseCases struct {
+		port.FindUserByEmailAndPasswordUseCase
+		port.CreateUserUseCase
+		port.LoginUserUseCase
+		port.RegisterUserUseCase
+	}
+
+	Handlers struct {
+		*httphandl.AuthHandler
+	}
+)
+
+func NewRepositories(logger logging.Logger, mdb *mongo.Client) *Repositories {
+	return &Repositories{
+		UserRepository: mongorepo.NewUserRepository(logger, mdb),
+	}
+}
+
+func NewUseCases(authSecret string, repos *Repositories) *UseCases {
+	findUserByEmailAndPasswordUC := usecase.NewFindUserByEmailAndPassword(repos.UserRepository)
+	createUserUC := usecase.NewCreateUser(repos.UserRepository)
+	registerUserUC := usecase.NewRegisterUser(authSecret, createUserUC)
+	loginUserUC := usecase.NewLoginUser(authSecret, findUserByEmailAndPasswordUC)
+
+	return &UseCases{
+		FindUserByEmailAndPasswordUseCase: findUserByEmailAndPasswordUC,
+		CreateUserUseCase:                 createUserUC,
+		RegisterUserUseCase:               registerUserUC,
+		LoginUserUseCase:                  loginUserUC,
+	}
+}
+
+func NewHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
+	return &Handlers{
+		AuthHandler: httphandl.NewAuthHandler(
+			logger,
+			ucs.RegisterUserUseCase,
+			ucs.LoginUserUseCase,
+		),
+	}
+}
+
 type App struct {
 	conf   Config
 	logger logging.Logger
 
 	mdb *mongo.Client
+
+	repositories *Repositories
+	useCases     *UseCases
+	handlers     *Handlers
 
 	router *mux.Router
 	server *http.Server
@@ -48,16 +103,23 @@ func New(conf Config) (*App, error) {
 		return nil, fmt.Errorf("%s: init mongo: %w", op, err)
 	}
 
+	repositories := NewRepositories(logger, mdb)
+	useCases := NewUseCases(conf.Auth.Secret, repositories)
+	handlers := NewHandlers(logger, useCases)
+
 	router := mux.NewRouter()
 	server := newServer(router, conf.HTTP.Addr)
 
 	return &App{
-		conf:   conf,
-		logger: logger,
-		mdb:    mdb,
-		router: router,
-		server: server,
-		closer: closer.New(),
+		conf:         conf,
+		logger:       logger,
+		mdb:          mdb,
+		repositories: repositories,
+		useCases:     useCases,
+		handlers:     handlers,
+		router:       router,
+		server:       server,
+		closer:       closer.New(),
 	}, nil
 }
 
@@ -97,6 +159,9 @@ func (app *App) setupRoutes() {
 			fmt.Fprintf(w, "OK")
 		}).
 		Methods(http.MethodGet)
+
+	app.router.Handle("/api/v1/auth/register", app.handlers.AuthHandler.HandleRegisterUser()).Methods(http.MethodPost)
+	app.router.Handle("/api/v1/auth/login", app.handlers.AuthHandler.HandleLoginUser()).Methods(http.MethodPost)
 }
 
 func (app *App) startServer(_ context.Context, errs chan<- error) {
