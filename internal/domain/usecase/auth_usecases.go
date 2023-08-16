@@ -61,5 +61,20 @@ func NewLoginUser(authSecret string, findUserByEmailAndPasswordUC port.FindUserB
 }
 
 func (uc *LoginUser) Invoke(ctx context.Context, dto port.LoginUserUCDTO) (model.User, port.Token, error) {
-	return model.User{}, "", nil
+	const op = "usecase.LoginUser"
+	var err error
+
+	user, err := uc.findUserByEmailAndPasswordUC.Invoke(ctx, port.FindUserByEmailAndPasswordUCDTO(dto))
+	if err != nil {
+		return model.User{}, "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	payload := jwt.Payload{UserID: user.ID, Nickname: user.Nickname, Email: user.Email, Verified: user.Verified}
+	params := jwt.GenerateParams{SigningKey: uc.authSecret, TTL: _tokenTTL}
+	token, err := jwt.Generate(payload, params)
+	if err != nil {
+		return model.User{}, "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return user, token, nil
 }

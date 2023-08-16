@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -82,5 +83,30 @@ func (uc *FindUserByEmailAndPassword) Invoke(
 	ctx context.Context,
 	dto port.FindUserByEmailAndPasswordUCDTO,
 ) (model.User, error) {
-	return model.User{}, nil
+	const op = "usecase.FindUserByEmailAndPassword"
+	var err error
+
+	err = validation.Validate(
+		vrule.Email(dto.Email),
+		vrule.Password(dto.Password),
+	)
+	if err != nil {
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	user, err := uc.userRepo.FindUserByEmail(ctx, dto.Email)
+	if err != nil {
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = passhash.Compare(dto.Password, user.Password)
+	if err != nil {
+		if errors.Is(err, passhash.ErrWrongPassword) {
+			return model.User{}, fmt.Errorf("%s: %w", op, model.ErrUserNotFound)
+		}
+
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return user, nil
 }
