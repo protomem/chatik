@@ -14,6 +14,7 @@ import (
 	"github.com/protomem/chatik/internal/domain/port"
 	"github.com/protomem/chatik/internal/domain/usecase"
 	httphandl "github.com/protomem/chatik/internal/infra/handler/http"
+	httpmdw "github.com/protomem/chatik/internal/infra/middleware/http"
 	mongorepo "github.com/protomem/chatik/internal/infra/repository/mongo"
 	"github.com/protomem/chatik/pkg/closer"
 	"github.com/protomem/chatik/pkg/logging"
@@ -29,14 +30,20 @@ type (
 	}
 
 	UseCases struct {
+		port.FindUserByIDUseCase
 		port.FindUserByEmailAndPasswordUseCase
 		port.CreateUserUseCase
 		port.LoginUserUseCase
 		port.RegisterUserUseCase
+		port.VerifyTokenUseCase
 	}
 
 	Handlers struct {
 		*httphandl.AuthHandler
+	}
+
+	Middlewares struct {
+		*httpmdw.AuthMiddleware
 	}
 )
 
@@ -47,16 +54,20 @@ func NewRepositories(logger logging.Logger, mdb *mongo.Client) *Repositories {
 }
 
 func NewUseCases(authSecret string, repos *Repositories) *UseCases {
+	findUserByID := usecase.NewFindUserByID(repos.UserRepository)
 	findUserByEmailAndPasswordUC := usecase.NewFindUserByEmailAndPassword(repos.UserRepository)
 	createUserUC := usecase.NewCreateUser(repos.UserRepository)
 	registerUserUC := usecase.NewRegisterUser(authSecret, createUserUC)
 	loginUserUC := usecase.NewLoginUser(authSecret, findUserByEmailAndPasswordUC)
+	verifyTokenUC := usecase.NewVerifyToken(authSecret, findUserByID)
 
 	return &UseCases{
+		FindUserByIDUseCase:               findUserByID,
 		FindUserByEmailAndPasswordUseCase: findUserByEmailAndPasswordUC,
 		CreateUserUseCase:                 createUserUC,
 		RegisterUserUseCase:               registerUserUC,
 		LoginUserUseCase:                  loginUserUC,
+		VerifyTokenUseCase:                verifyTokenUC,
 	}
 }
 
@@ -70,6 +81,12 @@ func NewHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
 	}
 }
 
+func NewMiddlewares(logger logging.Logger, ucs *UseCases) *Middlewares {
+	return &Middlewares{
+		AuthMiddleware: httpmdw.NewAuthMiddleware(logger, ucs.VerifyTokenUseCase),
+	}
+}
+
 type App struct {
 	conf   Config
 	logger logging.Logger
@@ -79,6 +96,7 @@ type App struct {
 	repositories *Repositories
 	useCases     *UseCases
 	handlers     *Handlers
+	middlewares  *Middlewares
 
 	router *mux.Router
 	server *http.Server
@@ -106,6 +124,7 @@ func New(conf Config) (*App, error) {
 	repositories := NewRepositories(logger, mdb)
 	useCases := NewUseCases(conf.Auth.Secret, repositories)
 	handlers := NewHandlers(logger, useCases)
+	middlewares := NewMiddlewares(logger, useCases)
 
 	router := mux.NewRouter()
 	server := newServer(router, conf.HTTP.Addr)
@@ -117,6 +136,7 @@ func New(conf Config) (*App, error) {
 		repositories: repositories,
 		useCases:     useCases,
 		handlers:     handlers,
+		middlewares:  middlewares,
 		router:       router,
 		server:       server,
 		closer:       closer.New(),
@@ -154,6 +174,8 @@ func (app *App) registerOnShutdown() {
 }
 
 func (app *App) setupRoutes() {
+	app.router.Use(app.middlewares.AuthMiddleware.Authenticator())
+
 	app.router.
 		HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "OK")

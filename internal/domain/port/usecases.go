@@ -3,7 +3,9 @@ package port
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/protomem/chatik/internal/domain/model"
+	"github.com/protomem/chatik/internal/jwt"
 )
 
 // Utilities types
@@ -11,6 +13,12 @@ import (
 type Token = string
 
 // User Use Cases
+
+type (
+	FindUserByIDUseCase interface {
+		Invoke(ctx context.Context, id uuid.UUID) (model.User, error)
+	}
+)
 
 type (
 	CreateUserUCDTO struct {
@@ -57,5 +65,24 @@ type (
 
 	LoginUserUseCase interface {
 		Invoke(ctx context.Context, dto LoginUserUCDTO) (model.User, Token, error)
+	}
+)
+
+type (
+	VerifyTokenUseCase interface {
+		Invoke(ctx context.Context, token string) (model.User, jwt.Payload, error)
+	}
+)
+
+// Channel Use Cases
+
+type (
+	CreateChannelUCDTO struct {
+		Title  string
+		UserID uuid.UUID
+	}
+
+	CreateChannelUseCase interface {
+		Invoke(ctx context.Context, dto CreateChannelUCDTO) (model.Channel, error)
 	}
 )

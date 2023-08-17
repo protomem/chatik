@@ -15,6 +15,7 @@ const _tokenTTL = 3 * 24 * time.Hour
 var (
 	_ port.RegisterUserUseCase = (*RegisterUser)(nil)
 	_ port.LoginUserUseCase    = (*LoginUser)(nil)
+	_ port.VerifyTokenUseCase  = (*VerifyToken)(nil)
 )
 
 type RegisterUser struct {
@@ -77,4 +78,35 @@ func (uc *LoginUser) Invoke(ctx context.Context, dto port.LoginUserUCDTO) (model
 	}
 
 	return user, token, nil
+}
+
+type VerifyToken struct {
+	authSecret string
+
+	findUserByIDUC port.FindUserByIDUseCase
+}
+
+func NewVerifyToken(authSecret string, findUserByIDUC port.FindUserByIDUseCase) *VerifyToken {
+	return &VerifyToken{
+		authSecret:     authSecret,
+		findUserByIDUC: findUserByIDUC,
+	}
+}
+
+func (uc *VerifyToken) Invoke(ctx context.Context, token string) (model.User, jwt.Payload, error) {
+	const op = "usecase.VerifyToken"
+	var err error
+
+	params := jwt.ParseParams{SigningKey: uc.authSecret}
+	payload, err := jwt.Parse(token, params)
+	if err != nil {
+		return model.User{}, jwt.Payload{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	user, err := uc.findUserByIDUC.Invoke(ctx, payload.UserID)
+	if err != nil {
+		return model.User{}, jwt.Payload{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return user, payload, nil
 }

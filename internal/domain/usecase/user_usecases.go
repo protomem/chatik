@@ -14,54 +14,26 @@ import (
 )
 
 var (
-	_ port.CreateUserUseCase                 = (*CreateUser)(nil)
+	_ port.FindUserByIDUseCase               = (*FindUserByID)(nil)
 	_ port.FindUserByEmailAndPasswordUseCase = (*FindUserByEmailAndPassword)(nil)
+	_ port.CreateUserUseCase                 = (*CreateUser)(nil)
 )
 
-type CreateUser struct {
+type FindUserByID struct {
 	userRepo port.UserRepository
 }
 
-func NewCreateUser(userRepo port.UserRepository) *CreateUser {
-	return &CreateUser{
+func NewFindUserByID(userRepo port.UserRepository) *FindUserByID {
+	return &FindUserByID{
 		userRepo: userRepo,
 	}
 }
 
-func (uc *CreateUser) Invoke(ctx context.Context, dto port.CreateUserUCDTO) (model.User, error) {
-	const op = "usecase.CreateUser"
+func (uc *FindUserByID) Invoke(ctx context.Context, id uuid.UUID) (model.User, error) {
+	const op = "usecase.FindUserByID"
 	var err error
 
-	err = validation.Validate(
-		vrule.Nickname(dto.Nickname),
-		vrule.Email(dto.Email),
-		vrule.Password(dto.Password),
-	)
-	if err != nil {
-		return model.User{}, fmt.Errorf("%s: %w", op, err)
-	}
-
-	hashPass, err := passhash.Generate(dto.Password)
-	if err != nil {
-		return model.User{}, fmt.Errorf("%s: %w", op, err)
-	}
-
-	userID, err := uuid.NewRandom()
-	if err != nil {
-		return model.User{}, fmt.Errorf("%s: genete uuid: %w", op, err)
-	}
-
-	userID, err = uc.userRepo.CreateUser(ctx, port.CreateUserRepoDTO{
-		UserID:   userID,
-		Nickname: dto.Nickname,
-		Email:    dto.Email,
-		Password: hashPass,
-	})
-	if err != nil {
-		return model.User{}, fmt.Errorf("%s: %w", op, err)
-	}
-
-	user, err := uc.userRepo.FindUserByID(ctx, userID)
+	user, err := uc.userRepo.FindUserByID(ctx, id)
 	if err != nil {
 		return model.User{}, fmt.Errorf("%s: %w", op, err)
 	}
@@ -105,6 +77,57 @@ func (uc *FindUserByEmailAndPassword) Invoke(
 			return model.User{}, fmt.Errorf("%s: %w", op, model.ErrUserNotFound)
 		}
 
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return user, nil
+}
+
+type CreateUser struct {
+	userRepo port.UserRepository
+}
+
+func NewCreateUser(userRepo port.UserRepository) *CreateUser {
+	return &CreateUser{
+		userRepo: userRepo,
+	}
+}
+
+func (uc *CreateUser) Invoke(ctx context.Context, dto port.CreateUserUCDTO) (model.User, error) {
+	const op = "usecase.CreateUser"
+	var err error
+
+	err = validation.Validate(
+		vrule.Nickname(dto.Nickname),
+		vrule.Email(dto.Email),
+		vrule.Password(dto.Password),
+	)
+	if err != nil {
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	hashPass, err := passhash.Generate(dto.Password)
+	if err != nil {
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	userID, err := uuid.NewRandom()
+	if err != nil {
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	userID, err = uc.userRepo.CreateUser(ctx, port.CreateUserRepoDTO{
+		UserID:   userID,
+		Nickname: dto.Nickname,
+		Email:    dto.Email,
+		Password: hashPass,
+	})
+	if err != nil {
+		return model.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	user, err := uc.userRepo.FindUserByID(ctx, userID)
+	if err != nil {
 		return model.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
