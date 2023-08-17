@@ -1,6 +1,6 @@
 package vrule
 
-import "github.com/protomem/chatik/internal/validation"
+import "github.com/protomem/chatik/pkg/validation"
 
 func Nickname(nickname string) validation.ValidateFunc {
 	return func(v *validation.Validator) {

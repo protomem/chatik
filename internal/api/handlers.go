@@ -12,12 +12,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/protomem/chatik/internal/agregate"
 	"github.com/protomem/chatik/internal/database"
+	"github.com/protomem/chatik/internal/domain/vrule"
 	"github.com/protomem/chatik/internal/jwt"
 	"github.com/protomem/chatik/internal/passhash"
 	"github.com/protomem/chatik/internal/requestid"
 	"github.com/protomem/chatik/internal/stream"
-	"github.com/protomem/chatik/internal/validation"
-	"github.com/protomem/chatik/internal/validation/vrule"
+	"github.com/protomem/chatik/pkg/validation"
 	"github.com/valyala/fasthttp"
 )
 

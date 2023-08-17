@@ -9,8 +9,8 @@ import (
 	"github.com/protomem/chatik/internal/domain/model"
 	"github.com/protomem/chatik/internal/domain/port"
 	"github.com/protomem/chatik/internal/requestid"
-	"github.com/protomem/chatik/internal/validation"
 	"github.com/protomem/chatik/pkg/logging"
+	"github.com/protomem/chatik/pkg/validation"
 )
 
 type AuthHandler struct {

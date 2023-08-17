@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/protomem/chatik/internal/domain/model"
 	"github.com/protomem/chatik/internal/domain/port"
+	"github.com/protomem/chatik/internal/domain/vrule"
 	"github.com/protomem/chatik/internal/passhash"
-	"github.com/protomem/chatik/internal/validation"
-	"github.com/protomem/chatik/internal/validation/vrule"
+	"github.com/protomem/chatik/pkg/validation"
 )
 
 var (
