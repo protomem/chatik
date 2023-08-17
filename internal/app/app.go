@@ -27,19 +27,24 @@ import (
 type (
 	Repositories struct {
 		port.UserRepository
+		port.ChannelRepository
 	}
 
 	UseCases struct {
 		port.FindUserByIDUseCase
 		port.FindUserByEmailAndPasswordUseCase
 		port.CreateUserUseCase
+
 		port.LoginUserUseCase
 		port.RegisterUserUseCase
 		port.VerifyTokenUseCase
+
+		port.CreateChannelUseCase
 	}
 
 	Handlers struct {
 		*httphandl.AuthHandler
+		*httphandl.ChannelHandler
 	}
 
 	Middlewares struct {
@@ -47,19 +52,38 @@ type (
 	}
 )
 
-func NewRepositories(logger logging.Logger, mdb *mongo.Client) *Repositories {
-	return &Repositories{
-		UserRepository: mongorepo.NewUserRepository(logger, mdb),
+func NewRepositories(ctx context.Context, logger logging.Logger, mdb *mongo.Client) (*Repositories, error) {
+	const opMigrate = "migrate"
+	var err error
+
+	userRepo := mongorepo.NewUserRepository(logger, mdb)
+	err = userRepo.Migrate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", opMigrate, err)
 	}
+
+	channelRepo := mongorepo.NewChannelRepository(logger, mdb)
+	err = channelRepo.Migrate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", opMigrate, err)
+	}
+
+	return &Repositories{
+		UserRepository:    mongorepo.NewUserRepository(logger, mdb),
+		ChannelRepository: mongorepo.NewChannelRepository(logger, mdb),
+	}, nil
 }
 
 func NewUseCases(authSecret string, repos *Repositories) *UseCases {
 	findUserByID := usecase.NewFindUserByID(repos.UserRepository)
 	findUserByEmailAndPasswordUC := usecase.NewFindUserByEmailAndPassword(repos.UserRepository)
 	createUserUC := usecase.NewCreateUser(repos.UserRepository)
+
 	registerUserUC := usecase.NewRegisterUser(authSecret, createUserUC)
 	loginUserUC := usecase.NewLoginUser(authSecret, findUserByEmailAndPasswordUC)
 	verifyTokenUC := usecase.NewVerifyToken(authSecret, findUserByID)
+
+	createChannelUC := usecase.NewCreateChannel(repos.ChannelRepository, findUserByID)
 
 	return &UseCases{
 		FindUserByIDUseCase:               findUserByID,
@@ -68,6 +92,7 @@ func NewUseCases(authSecret string, repos *Repositories) *UseCases {
 		RegisterUserUseCase:               registerUserUC,
 		LoginUserUseCase:                  loginUserUC,
 		VerifyTokenUseCase:                verifyTokenUC,
+		CreateChannelUseCase:              createChannelUC,
 	}
 }
 
@@ -77,6 +102,11 @@ func NewHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
 			logger,
 			ucs.RegisterUserUseCase,
 			ucs.LoginUserUseCase,
+		),
+
+		ChannelHandler: httphandl.NewChannelHandler(
+			logger,
+			ucs.CreateChannelUseCase,
 		),
 	}
 }
@@ -121,7 +151,11 @@ func New(conf Config) (*App, error) {
 		return nil, fmt.Errorf("%s: init mongo: %w", op, err)
 	}
 
-	repositories := NewRepositories(logger, mdb)
+	repositories, err := NewRepositories(ctx, logger, mdb)
+	if err != nil {
+		return nil, fmt.Errorf("%s: init repositories: %w", op, err)
+	}
+
 	useCases := NewUseCases(conf.Auth.Secret, repositories)
 	handlers := NewHandlers(logger, useCases)
 	middlewares := NewMiddlewares(logger, useCases)
@@ -184,6 +218,8 @@ func (app *App) setupRoutes() {
 
 	app.router.Handle("/api/v1/auth/register", app.handlers.AuthHandler.HandleRegisterUser()).Methods(http.MethodPost)
 	app.router.Handle("/api/v1/auth/login", app.handlers.AuthHandler.HandleLoginUser()).Methods(http.MethodPost)
+
+	app.router.Handle("/api/v1/channels", app.handlers.ChannelHandler.HandleCreateChannel()).Methods(http.MethodPost)
 }
 
 func (app *App) startServer(_ context.Context, errs chan<- error) {
