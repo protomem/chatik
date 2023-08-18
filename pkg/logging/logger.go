@@ -13,6 +13,7 @@ type Logger interface {
 	Error(msg string, args ...any)
 
 	io.Writer
+	Println(args ...any)
 
 	Sync(context.Context) error
 }

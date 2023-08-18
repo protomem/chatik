@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/protomem/chatik/pkg/logging"
 	"go.uber.org/zap"
@@ -49,9 +50,17 @@ func (l *Logger) Error(msg string, args ...any) {
 }
 
 func (l *Logger) Write(p []byte) (int, error) {
-	l.Info(string(p))
+	logStr := string(p)
+	logStr = strings.TrimSpace(logStr)
+	logStr = strings.Trim(logStr, "\n")
+
+	l.Info(logStr)
 
 	return len(p), nil
+}
+
+func (l *Logger) Println(args ...any) {
+	l.Debug(fmt.Sprint(args...))
 }
 
 func (l *Logger) Sync(_ context.Context) error {

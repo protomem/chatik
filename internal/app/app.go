@@ -208,13 +208,14 @@ func (app *App) registerOnShutdown() {
 }
 
 func (app *App) setupRoutes() {
+	app.router.Use(httpmdw.RequestID())
+	app.router.Use(httpmdw.RequestLogger(app.logger))
+	app.router.Use(httpmdw.Recovery(app.logger))
+	app.router.Use(httpmdw.CORS())
+
 	app.router.Use(app.middlewares.AuthMiddleware.Authenticator())
 
-	app.router.
-		HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "OK")
-		}).
-		Methods(http.MethodGet)
+	app.router.Handle("/health", httphandl.HealthCheck()).Methods(http.MethodGet)
 
 	app.router.Handle("/api/v1/auth/register", app.handlers.AuthHandler.HandleRegisterUser()).Methods(http.MethodPost)
 	app.router.Handle("/api/v1/auth/login", app.handlers.AuthHandler.HandleLoginUser()).Methods(http.MethodPost)
