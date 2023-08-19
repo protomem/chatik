@@ -120,6 +120,73 @@ func (r *ChannelRepository) FindChannelByID(ctx context.Context, channelID uuid.
 	return channel, nil
 }
 
+func (r *ChannelRepository) FindAllChannels(ctx context.Context) ([]model.Channel, error) {
+	const op = "mongo.ChannelRepository.FindAllChannels"
+	var err error
+
+	cursorChannels, err := r.client.
+		Database(r.database).
+		Collection(r.collection).
+		Find(ctx, bson.D{})
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return []model.Channel{}, nil
+		}
+
+		return []model.Channel{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	channelsDocs := make([]ChannelDocument, 0)
+	err = cursorChannels.All(ctx, &channelsDocs)
+	if err != nil {
+		return []model.Channel{}, fmt.Errorf("%s: decode: %w", op, err)
+	}
+
+	userIDs := make([]string, 0, len(channelsDocs))
+	for _, doc := range channelsDocs {
+		userIDs = append(userIDs, doc.UserID)
+	}
+
+	usersFilter := bson.D{
+		{Key: "user_id", Value: bson.D{{Key: "$in", Value: userIDs}}},
+	}
+
+	cursorUsers, err := r.client.
+		Database(r.database).
+		Collection("users").
+		Find(ctx, usersFilter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return []model.Channel{}, nil
+		}
+
+		return []model.Channel{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	usersDocs := make([]UserDocument, 0)
+	err = cursorUsers.All(ctx, &usersDocs)
+	if err != nil {
+		return []model.Channel{}, fmt.Errorf("%s: decode: %w", op, err)
+	}
+
+	// TODO: debug
+	channels := make([]model.Channel, 0, len(channelsDocs))
+	for _, doc := range channelsDocs {
+		for _, userDoc := range usersDocs {
+			if userDoc.UserID == doc.UserID {
+				channel, err := mapChannelDocumentAndUserDocumentToChannelModel(doc, userDoc)
+				if err != nil {
+					return []model.Channel{}, fmt.Errorf("%s: %w", op, err)
+				}
+
+				channels = append(channels, channel)
+			}
+		}
+	}
+
+	return channels, nil
+}
+
 func (r *ChannelRepository) CreateChannel(ctx context.Context, dto port.CreateChannelRepoDTO) (uuid.UUID, error) {
 	const op = "mongo.ChannelRepository.CreateChannel"
 	var err error

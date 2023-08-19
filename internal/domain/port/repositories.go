@@ -31,6 +31,7 @@ type (
 
 	ChannelRepository interface {
 		FindChannelByID(ctx context.Context, id uuid.UUID) (model.Channel, error)
+		FindAllChannels(ctx context.Context) ([]model.Channel, error)
 		CreateChannel(ctx context.Context, dto CreateChannelRepoDTO) (uuid.UUID, error)
 	}
 )

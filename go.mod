@@ -1,6 +1,6 @@
 module github.com/protomem/chatik
 
-go 1.20
+go 1.21.0
 
 require (
 	github.com/ThreeDotsLabs/watermill v1.3.2

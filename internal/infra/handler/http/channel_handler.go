@@ -17,14 +17,65 @@ import (
 type ChannelHandler struct {
 	logger logging.Logger
 
-	createChannelUC port.CreateChannelUseCase
+	findAllChannelsUC port.FindAllChannelsUseCase
+	createChannelUC   port.CreateChannelUseCase
 }
 
-func NewChannelHandler(logger logging.Logger, createChannelUC port.CreateChannelUseCase) *ChannelHandler {
+func NewChannelHandler(
+	logger logging.Logger,
+	findAllChannelsUC port.FindAllChannelsUseCase,
+	createChannelUC port.CreateChannelUseCase,
+) *ChannelHandler {
 	return &ChannelHandler{
-		logger:          logger.With("handlerType", "http", "handler", "channel"),
-		createChannelUC: createChannelUC,
+		logger:            logger.With("handlerType", "http", "handler", "channel"),
+		findAllChannelsUC: findAllChannelsUC,
+		createChannelUC:   createChannelUC,
 	}
+}
+
+func (h *ChannelHandler) HandleFindAllChannels() http.Handler {
+	type Response struct {
+		Channels []model.Channel `json:"channels"`
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		const op = "http.ChannelHandler.HandleFindAllChannels"
+		var err error
+
+		ctx := r.Context()
+		logger := h.logger.With(
+			requestid.LogKey, requestid.Extract(ctx),
+			"operation", op,
+		)
+
+		defer func() {
+			if err != nil {
+				logger.Error("failed to send response", "error", err)
+			}
+		}()
+
+		channels, err := h.findAllChannelsUC.Invoke(ctx)
+		if err != nil {
+			logger.Error("failed to find all channels", "error", err)
+
+			code := http.StatusInternalServerError
+			res := map[string]any{
+				"error": "failed to find all channels",
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(code)
+			err = json.NewEncoder(w).Encode(res)
+
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		err = json.NewEncoder(w).Encode(Response{
+			Channels: channels,
+		})
+	})
 }
 
 func (h *ChannelHandler) HandleCreateChannel() http.Handler {

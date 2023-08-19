@@ -77,6 +77,12 @@ type (
 // Channel Use Cases
 
 type (
+	FindAllChannelsUseCase interface {
+		Invoke(ctx context.Context) ([]model.Channel, error)
+	}
+)
+
+type (
 	CreateChannelUCDTO struct {
 		Title  string
 		UserID uuid.UUID

@@ -11,7 +11,32 @@ import (
 	"github.com/protomem/chatik/pkg/validation"
 )
 
-var _ port.CreateChannelUseCase = (*CreateChannel)(nil)
+var (
+	_ port.FindAllChannelsUseCase = (*FindAllChannels)(nil)
+	_ port.CreateChannelUseCase   = (*CreateChannel)(nil)
+)
+
+type FindAllChannels struct {
+	channelRepo port.ChannelRepository
+}
+
+func NewFindAllChannels(channelRepo port.ChannelRepository) *FindAllChannels {
+	return &FindAllChannels{
+		channelRepo: channelRepo,
+	}
+}
+
+func (uc *FindAllChannels) Invoke(ctx context.Context) ([]model.Channel, error) {
+	const op = "usecase.FindAllChannel"
+	var err error
+
+	channels, err := uc.channelRepo.FindAllChannels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return channels, nil
+}
 
 type CreateChannel struct {
 	channelRepo port.ChannelRepository

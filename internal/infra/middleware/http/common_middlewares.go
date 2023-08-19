@@ -29,9 +29,12 @@ func Recovery(logger logging.Logger) mux.MiddlewareFunc {
 	logger = logger.With("middlewareType", "http", "middleware", "recovery")
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			handlers.RecoveryHandler(handlers.RecoveryLogger(
-				logger.With(requestid.LogKey, requestid.Extract(r.Context())),
-			))(next).ServeHTTP(w, r)
+			handlers.RecoveryHandler(
+				handlers.RecoveryLogger(
+					logger.With(requestid.LogKey, requestid.Extract(r.Context())),
+				),
+				handlers.PrintRecoveryStack(true),
+			)(next).ServeHTTP(w, r)
 		})
 	}
 }

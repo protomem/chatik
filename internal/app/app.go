@@ -39,6 +39,7 @@ type (
 		port.RegisterUserUseCase
 		port.VerifyTokenUseCase
 
+		port.FindAllChannelsUseCase
 		port.CreateChannelUseCase
 	}
 
@@ -83,6 +84,7 @@ func NewUseCases(authSecret string, repos *Repositories) *UseCases {
 	loginUserUC := usecase.NewLoginUser(authSecret, findUserByEmailAndPasswordUC)
 	verifyTokenUC := usecase.NewVerifyToken(authSecret, findUserByID)
 
+	findAllChannelsUC := usecase.NewFindAllChannels(repos.ChannelRepository)
 	createChannelUC := usecase.NewCreateChannel(repos.ChannelRepository, findUserByID)
 
 	return &UseCases{
@@ -92,6 +94,7 @@ func NewUseCases(authSecret string, repos *Repositories) *UseCases {
 		RegisterUserUseCase:               registerUserUC,
 		LoginUserUseCase:                  loginUserUC,
 		VerifyTokenUseCase:                verifyTokenUC,
+		FindAllChannelsUseCase:            findAllChannelsUC,
 		CreateChannelUseCase:              createChannelUC,
 	}
 }
@@ -106,6 +109,7 @@ func NewHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
 
 		ChannelHandler: httphandl.NewChannelHandler(
 			logger,
+			ucs.FindAllChannelsUseCase,
 			ucs.CreateChannelUseCase,
 		),
 	}
@@ -220,6 +224,7 @@ func (app *App) setupRoutes() {
 	app.router.Handle("/api/v1/auth/register", app.handlers.AuthHandler.HandleRegisterUser()).Methods(http.MethodPost)
 	app.router.Handle("/api/v1/auth/login", app.handlers.AuthHandler.HandleLoginUser()).Methods(http.MethodPost)
 
+	app.router.Handle("/api/v1/channels", app.handlers.ChannelHandler.HandleFindAllChannels()).Methods(http.MethodGet)
 	app.router.Handle("/api/v1/channels", app.handlers.ChannelHandler.HandleCreateChannel()).Methods(http.MethodPost)
 }
 
