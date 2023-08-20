@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/protomem/chatik/internal/domain/model"
 	"github.com/protomem/chatik/internal/domain/port"
 	"github.com/protomem/chatik/internal/jwt"
@@ -19,17 +21,20 @@ type ChannelHandler struct {
 
 	findAllChannelsUC port.FindAllChannelsUseCase
 	createChannelUC   port.CreateChannelUseCase
+	deleteChannelUC   port.DeleteChannelUseCase
 }
 
 func NewChannelHandler(
 	logger logging.Logger,
 	findAllChannelsUC port.FindAllChannelsUseCase,
 	createChannelUC port.CreateChannelUseCase,
+	deleteChannelUC port.DeleteChannelUseCase,
 ) *ChannelHandler {
 	return &ChannelHandler{
 		logger:            logger.With("handlerType", "http", "handler", "channel"),
 		findAllChannelsUC: findAllChannelsUC,
 		createChannelUC:   createChannelUC,
+		deleteChannelUC:   deleteChannelUC,
 	}
 }
 
@@ -178,5 +183,84 @@ func (h *ChannelHandler) HandleCreateChannel() http.Handler {
 		err = json.NewEncoder(w).Encode(Response{
 			Channel: channel,
 		})
+	})
+}
+
+func (h *ChannelHandler) HandleDeleteChannel() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		const op = "http.ChannelHandler.HandleDeleteChannel"
+		var err error
+
+		ctx := r.Context()
+		logger := h.logger.With(
+			requestid.LogKey, requestid.Extract(ctx),
+			"operation", op,
+		)
+
+		defer func() {
+			if err != nil {
+				logger.Error("failed to send response", "error", err)
+			}
+		}()
+
+		channelIDRaw, ok := mux.Vars(r)["channelID"]
+		if !ok {
+			logger.Error("failed to extract channel id from request")
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "missing channel id",
+			})
+
+			return
+		}
+
+		channelID, err := uuid.Parse(channelIDRaw)
+		if err != nil {
+			logger.Error("failed to parse channel id", "error", err)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "invalid channel id",
+			})
+
+			return
+		}
+
+		authPayload, ok := jwt.Extract(ctx)
+		if !ok {
+			logger.Error("failed to extract auth payload")
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "access denied",
+			})
+
+			return
+		}
+
+		err = h.deleteChannelUC.Invoke(ctx, port.DeleteChannelUCDTO{
+			ChannelID: channelID,
+			UserID:    authPayload.UserID,
+		})
+		if err != nil {
+			logger.Error("failed to delete channel", "error", err)
+
+			code := http.StatusInternalServerError
+			res := map[string]any{
+				"error": "failed to delete channel",
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(code)
+			err = json.NewEncoder(w).Encode(res)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	})
 }

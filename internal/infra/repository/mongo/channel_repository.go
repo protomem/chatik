@@ -207,13 +207,32 @@ func (r *ChannelRepository) CreateChannel(ctx context.Context, dto port.CreateCh
 		InsertOne(ctx, doc)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return uuid.Nil, fmt.Errorf("%s: %w", op, model.ErrChannelAlreadyExists)
+			return uuid.Nil, fmt.Errorf("%s: create channel: %w", op, model.ErrChannelAlreadyExists)
 		}
 
-		return uuid.Nil, fmt.Errorf("%s: %w", op, err)
+		return uuid.Nil, fmt.Errorf("%s: create channel: %w", op, err)
 	}
 
 	return dto.ChannelID, nil
+}
+
+func (r *ChannelRepository) DeleteChannelByID(ctx context.Context, id uuid.UUID) error {
+	const op = "mongo.ChannelRepository.DeleteChannelByID"
+	var err error
+
+	filter := bson.D{
+		{Key: "channel_id", Value: id.String()},
+	}
+
+	_, err = r.client.
+		Database(r.database).
+		Collection(r.collection).
+		DeleteOne(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("%s: delete channel: %w", op, err)
+	}
+
+	return nil
 }
 
 func mapChannelDocumentAndUserDocumentToChannelModel(

@@ -12,9 +12,33 @@ import (
 )
 
 var (
+	_ port.FindChannelUseCase     = (*FindChannel)(nil)
 	_ port.FindAllChannelsUseCase = (*FindAllChannels)(nil)
 	_ port.CreateChannelUseCase   = (*CreateChannel)(nil)
+	_ port.DeleteChannelUseCase   = (*DeleteChannel)(nil)
 )
+
+type FindChannel struct {
+	channelRepo port.ChannelRepository
+}
+
+func NewFindChannel(channelRepo port.ChannelRepository) *FindChannel {
+	return &FindChannel{
+		channelRepo: channelRepo,
+	}
+}
+
+func (uc *FindChannel) Invoke(ctx context.Context, id uuid.UUID) (model.Channel, error) {
+	const op = "usecase.FindChannel"
+	var err error
+
+	channel, err := uc.channelRepo.FindChannelByID(ctx, id)
+	if err != nil {
+		return model.Channel{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return channel, nil
+}
 
 type FindAllChannels struct {
 	channelRepo port.ChannelRepository
@@ -85,4 +109,38 @@ func (uc *CreateChannel) Invoke(ctx context.Context, dto port.CreateChannelUCDTO
 	}
 
 	return channel, nil
+}
+
+type DeleteChannel struct {
+	channelRepo port.ChannelRepository
+
+	findChannelUC port.FindChannelUseCase
+}
+
+func NewDeleteChannel(channelRepo port.ChannelRepository, findChannelUC port.FindChannelUseCase) *DeleteChannel {
+	return &DeleteChannel{
+		channelRepo:   channelRepo,
+		findChannelUC: findChannelUC,
+	}
+}
+
+func (uc *DeleteChannel) Invoke(ctx context.Context, dto port.DeleteChannelUCDTO) error {
+	const op = "usecase.DeleteChannel"
+	var err error
+
+	channel, err := uc.findChannelUC.Invoke(ctx, dto.ChannelID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if channel.User.ID != dto.UserID {
+		return fmt.Errorf("%s: %w", op, model.ErrChannelNotFound)
+	}
+
+	err = uc.channelRepo.DeleteChannelByID(ctx, dto.ChannelID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }

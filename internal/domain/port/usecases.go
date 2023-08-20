@@ -77,6 +77,12 @@ type (
 // Channel Use Cases
 
 type (
+	FindChannelUseCase interface {
+		Invoke(ctx context.Context, id uuid.UUID) (model.Channel, error)
+	}
+)
+
+type (
 	FindAllChannelsUseCase interface {
 		Invoke(ctx context.Context) ([]model.Channel, error)
 	}
@@ -90,5 +96,16 @@ type (
 
 	CreateChannelUseCase interface {
 		Invoke(ctx context.Context, dto CreateChannelUCDTO) (model.Channel, error)
+	}
+)
+
+type (
+	DeleteChannelUCDTO struct {
+		ChannelID uuid.UUID
+		UserID    uuid.UUID
+	}
+
+	DeleteChannelUseCase interface {
+		Invoke(ctx context.Context, dto DeleteChannelUCDTO) error
 	}
 )

@@ -39,8 +39,10 @@ type (
 		port.RegisterUserUseCase
 		port.VerifyTokenUseCase
 
+		port.FindChannelUseCase
 		port.FindAllChannelsUseCase
 		port.CreateChannelUseCase
+		port.DeleteChannelUseCase
 	}
 
 	Handlers struct {
@@ -84,8 +86,10 @@ func NewUseCases(authSecret string, repos *Repositories) *UseCases {
 	loginUserUC := usecase.NewLoginUser(authSecret, findUserByEmailAndPasswordUC)
 	verifyTokenUC := usecase.NewVerifyToken(authSecret, findUserByID)
 
+	findChannelUC := usecase.NewFindChannel(repos.ChannelRepository)
 	findAllChannelsUC := usecase.NewFindAllChannels(repos.ChannelRepository)
 	createChannelUC := usecase.NewCreateChannel(repos.ChannelRepository, findUserByID)
+	deleteChannelUC := usecase.NewDeleteChannel(repos.ChannelRepository, findChannelUC)
 
 	return &UseCases{
 		FindUserByIDUseCase:               findUserByID,
@@ -94,8 +98,10 @@ func NewUseCases(authSecret string, repos *Repositories) *UseCases {
 		RegisterUserUseCase:               registerUserUC,
 		LoginUserUseCase:                  loginUserUC,
 		VerifyTokenUseCase:                verifyTokenUC,
+		FindChannelUseCase:                findChannelUC,
 		FindAllChannelsUseCase:            findAllChannelsUC,
 		CreateChannelUseCase:              createChannelUC,
+		DeleteChannelUseCase:              deleteChannelUC,
 	}
 }
 
@@ -111,6 +117,7 @@ func NewHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
 			logger,
 			ucs.FindAllChannelsUseCase,
 			ucs.CreateChannelUseCase,
+			ucs.DeleteChannelUseCase,
 		),
 	}
 }
@@ -226,6 +233,8 @@ func (app *App) setupRoutes() {
 
 	app.router.Handle("/api/v1/channels", app.handlers.ChannelHandler.HandleFindAllChannels()).Methods(http.MethodGet)
 	app.router.Handle("/api/v1/channels", app.handlers.ChannelHandler.HandleCreateChannel()).Methods(http.MethodPost)
+	app.router.Handle("/api/v1/channels/{channelID}", app.handlers.
+		ChannelHandler.HandleDeleteChannel()).Methods(http.MethodDelete)
 }
 
 func (app *App) startServer(_ context.Context, errs chan<- error) {
