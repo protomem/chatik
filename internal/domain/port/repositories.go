@@ -36,3 +36,17 @@ type (
 		DeleteChannelByID(ctx context.Context, id uuid.UUID) error
 	}
 )
+
+type (
+	CreateMessageRepoDTO struct {
+		MessageID uuid.UUID
+		Content   string
+		ChannelID uuid.UUID
+		UserID    uuid.UUID
+	}
+
+	MessageRepository interface {
+		FindMessageByID(ctx context.Context, id uuid.UUID) (model.Message, error)
+		CreateMessage(ctx context.Context, dto CreateMessageRepoDTO) (uuid.UUID, error)
+	}
+)

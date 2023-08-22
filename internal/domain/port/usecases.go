@@ -15,7 +15,7 @@ type Token = string
 // User Use Cases
 
 type (
-	FindUserByIDUseCase interface {
+	FindUserUseCase interface {
 		Invoke(ctx context.Context, id uuid.UUID) (model.User, error)
 	}
 )
@@ -107,5 +107,19 @@ type (
 
 	DeleteChannelUseCase interface {
 		Invoke(ctx context.Context, dto DeleteChannelUCDTO) error
+	}
+)
+
+// Messages Use Cases
+
+type (
+	CreateMessageUCDTO struct {
+		Content   string
+		ChannelID uuid.UUID
+		UserID    uuid.UUID
+	}
+
+	CreateMessageUseCase interface {
+		Invoke(ctx context.Context, dto CreateMessageUCDTO) (model.Message, error)
 	}
 )

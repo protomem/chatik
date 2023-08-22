@@ -83,13 +83,13 @@ func (uc *LoginUser) Invoke(ctx context.Context, dto port.LoginUserUCDTO) (model
 type VerifyToken struct {
 	authSecret string
 
-	findUserByIDUC port.FindUserByIDUseCase
+	findUserUC port.FindUserUseCase
 }
 
-func NewVerifyToken(authSecret string, findUserByIDUC port.FindUserByIDUseCase) *VerifyToken {
+func NewVerifyToken(authSecret string, findUserUC port.FindUserUseCase) *VerifyToken {
 	return &VerifyToken{
-		authSecret:     authSecret,
-		findUserByIDUC: findUserByIDUC,
+		authSecret: authSecret,
+		findUserUC: findUserUC,
 	}
 }
 
@@ -103,7 +103,7 @@ func (uc *VerifyToken) Invoke(ctx context.Context, token string) (model.User, jw
 		return model.User{}, jwt.Payload{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	user, err := uc.findUserByIDUC.Invoke(ctx, payload.UserID)
+	user, err := uc.findUserUC.Invoke(ctx, payload.UserID)
 	if err != nil {
 		return model.User{}, jwt.Payload{}, fmt.Errorf("%s: %w", op, err)
 	}

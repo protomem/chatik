@@ -14,22 +14,22 @@ import (
 )
 
 var (
-	_ port.FindUserByIDUseCase               = (*FindUserByID)(nil)
+	_ port.FindUserUseCase                   = (*FindUser)(nil)
 	_ port.FindUserByEmailAndPasswordUseCase = (*FindUserByEmailAndPassword)(nil)
 	_ port.CreateUserUseCase                 = (*CreateUser)(nil)
 )
 
-type FindUserByID struct {
+type FindUser struct {
 	userRepo port.UserRepository
 }
 
-func NewFindUserByID(userRepo port.UserRepository) *FindUserByID {
-	return &FindUserByID{
+func NewFindUserByID(userRepo port.UserRepository) *FindUser {
+	return &FindUser{
 		userRepo: userRepo,
 	}
 }
 
-func (uc *FindUserByID) Invoke(ctx context.Context, id uuid.UUID) (model.User, error) {
+func (uc *FindUser) Invoke(ctx context.Context, id uuid.UUID) (model.User, error) {
 	const op = "usecase.FindUserByID"
 	var err error
 

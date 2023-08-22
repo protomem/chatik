@@ -28,10 +28,11 @@ type (
 	Repositories struct {
 		port.UserRepository
 		port.ChannelRepository
+		port.MessageRepository
 	}
 
 	UseCases struct {
-		port.FindUserByIDUseCase
+		port.FindUserUseCase
 		port.FindUserByEmailAndPasswordUseCase
 		port.CreateUserUseCase
 
@@ -43,11 +44,14 @@ type (
 		port.FindAllChannelsUseCase
 		port.CreateChannelUseCase
 		port.DeleteChannelUseCase
+
+		port.CreateMessageUseCase
 	}
 
 	Handlers struct {
 		*httphandl.AuthHandler
 		*httphandl.ChannelHandler
+		*httphandl.MessageHandler
 	}
 
 	Middlewares struct {
@@ -55,7 +59,7 @@ type (
 	}
 )
 
-func NewRepositories(ctx context.Context, logger logging.Logger, mdb *mongo.Client) (*Repositories, error) {
+func newRepositories(ctx context.Context, logger logging.Logger, mdb *mongo.Client) (*Repositories, error) {
 	const opMigrate = "migrate"
 	var err error
 
@@ -71,28 +75,37 @@ func NewRepositories(ctx context.Context, logger logging.Logger, mdb *mongo.Clie
 		return nil, fmt.Errorf("%s: %w", opMigrate, err)
 	}
 
+	messageRepo := mongorepo.NewMessageRepository(logger, mdb)
+	err = messageRepo.Migrate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", opMigrate, err)
+	}
+
 	return &Repositories{
-		UserRepository:    mongorepo.NewUserRepository(logger, mdb),
-		ChannelRepository: mongorepo.NewChannelRepository(logger, mdb),
+		UserRepository:    userRepo,
+		ChannelRepository: channelRepo,
+		MessageRepository: messageRepo,
 	}, nil
 }
 
-func NewUseCases(authSecret string, repos *Repositories) *UseCases {
-	findUserByID := usecase.NewFindUserByID(repos.UserRepository)
+func newUseCases(authSecret string, repos *Repositories) *UseCases {
+	findUserUC := usecase.NewFindUserByID(repos.UserRepository)
 	findUserByEmailAndPasswordUC := usecase.NewFindUserByEmailAndPassword(repos.UserRepository)
 	createUserUC := usecase.NewCreateUser(repos.UserRepository)
 
 	registerUserUC := usecase.NewRegisterUser(authSecret, createUserUC)
 	loginUserUC := usecase.NewLoginUser(authSecret, findUserByEmailAndPasswordUC)
-	verifyTokenUC := usecase.NewVerifyToken(authSecret, findUserByID)
+	verifyTokenUC := usecase.NewVerifyToken(authSecret, findUserUC)
 
 	findChannelUC := usecase.NewFindChannel(repos.ChannelRepository)
 	findAllChannelsUC := usecase.NewFindAllChannels(repos.ChannelRepository)
-	createChannelUC := usecase.NewCreateChannel(repos.ChannelRepository, findUserByID)
+	createChannelUC := usecase.NewCreateChannel(repos.ChannelRepository, findUserUC)
 	deleteChannelUC := usecase.NewDeleteChannel(repos.ChannelRepository, findChannelUC)
 
+	createMessageUC := usecase.NewCreateMessage(repos.MessageRepository, findUserUC, findChannelUC)
+
 	return &UseCases{
-		FindUserByIDUseCase:               findUserByID,
+		FindUserUseCase:                   findUserUC,
 		FindUserByEmailAndPasswordUseCase: findUserByEmailAndPasswordUC,
 		CreateUserUseCase:                 createUserUC,
 		RegisterUserUseCase:               registerUserUC,
@@ -102,10 +115,11 @@ func NewUseCases(authSecret string, repos *Repositories) *UseCases {
 		FindAllChannelsUseCase:            findAllChannelsUC,
 		CreateChannelUseCase:              createChannelUC,
 		DeleteChannelUseCase:              deleteChannelUC,
+		CreateMessageUseCase:              createMessageUC,
 	}
 }
 
-func NewHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
+func newHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
 	return &Handlers{
 		AuthHandler: httphandl.NewAuthHandler(
 			logger,
@@ -119,10 +133,15 @@ func NewHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
 			ucs.CreateChannelUseCase,
 			ucs.DeleteChannelUseCase,
 		),
+
+		MessageHandler: httphandl.NewMessageHandler(
+			logger,
+			ucs.CreateMessageUseCase,
+		),
 	}
 }
 
-func NewMiddlewares(logger logging.Logger, ucs *UseCases) *Middlewares {
+func newMiddlewares(logger logging.Logger, ucs *UseCases) *Middlewares {
 	return &Middlewares{
 		AuthMiddleware: httpmdw.NewAuthMiddleware(logger, ucs.VerifyTokenUseCase),
 	}
@@ -162,14 +181,14 @@ func New(conf Config) (*App, error) {
 		return nil, fmt.Errorf("%s: init mongo: %w", op, err)
 	}
 
-	repositories, err := NewRepositories(ctx, logger, mdb)
+	repositories, err := newRepositories(ctx, logger, mdb)
 	if err != nil {
 		return nil, fmt.Errorf("%s: init repositories: %w", op, err)
 	}
 
-	useCases := NewUseCases(conf.Auth.Secret, repositories)
-	handlers := NewHandlers(logger, useCases)
-	middlewares := NewMiddlewares(logger, useCases)
+	useCases := newUseCases(conf.Auth.Secret, repositories)
+	handlers := newHandlers(logger, useCases)
+	middlewares := newMiddlewares(logger, useCases)
 
 	router := mux.NewRouter()
 	server := newServer(router, conf.HTTP.Addr)
@@ -235,6 +254,9 @@ func (app *App) setupRoutes() {
 	app.router.Handle("/api/v1/channels", app.handlers.ChannelHandler.HandleCreateChannel()).Methods(http.MethodPost)
 	app.router.Handle("/api/v1/channels/{channelID}", app.handlers.
 		ChannelHandler.HandleDeleteChannel()).Methods(http.MethodDelete)
+
+	app.router.Handle("/api/v1/channels/{channelID}/messages", app.handlers.
+		MessageHandler.HandleCreateMessage()).Methods(http.MethodPost)
 }
 
 func (app *App) startServer(_ context.Context, errs chan<- error) {

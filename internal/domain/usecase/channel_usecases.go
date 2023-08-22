@@ -65,13 +65,13 @@ func (uc *FindAllChannels) Invoke(ctx context.Context) ([]model.Channel, error) 
 type CreateChannel struct {
 	channelRepo port.ChannelRepository
 
-	findUserByIDUC port.FindUserByIDUseCase
+	findUserUC port.FindUserUseCase
 }
 
-func NewCreateChannel(channelRepo port.ChannelRepository, findUserByIDUC port.FindUserByIDUseCase) *CreateChannel {
+func NewCreateChannel(channelRepo port.ChannelRepository, findUserDUC port.FindUserUseCase) *CreateChannel {
 	return &CreateChannel{
-		channelRepo:    channelRepo,
-		findUserByIDUC: findUserByIDUC,
+		channelRepo: channelRepo,
+		findUserUC:  findUserDUC,
 	}
 }
 
@@ -84,7 +84,7 @@ func (uc *CreateChannel) Invoke(ctx context.Context, dto port.CreateChannelUCDTO
 		return model.Channel{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	_, err = uc.findUserByIDUC.Invoke(ctx, dto.UserID)
+	_, err = uc.findUserUC.Invoke(ctx, dto.UserID)
 	if err != nil {
 		return model.Channel{}, fmt.Errorf("%s: %w", op, err)
 	}

@@ -60,6 +60,12 @@ func (r *ChannelRepository) Migrate(ctx context.Context) error {
 		CreateMany(ctx, []mongo.IndexModel{
 			{
 				Keys: bson.M{
+					"channel_id": 1,
+				},
+				Options: options.Index().SetUnique(true),
+			},
+			{
+				Keys: bson.M{
 					"title": 1,
 				},
 				Options: options.Index().SetUnique(true),
