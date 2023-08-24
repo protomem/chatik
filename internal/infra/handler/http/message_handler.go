@@ -21,17 +21,20 @@ type MessageHandler struct {
 
 	findAllMessagesByChannelIDUC port.FindAllMessagesByChannelIDUseCase
 	createMessageUC              port.CreateMessageUseCase
+	deleteMessageUC              port.DeleteMessageUseCase
 }
 
 func NewMessageHandler(
 	logger logging.Logger,
 	findAllMessagesByChannelIDUC port.FindAllMessagesByChannelIDUseCase,
 	createMessageUC port.CreateMessageUseCase,
+	deleteMessageUC port.DeleteMessageUseCase,
 ) *MessageHandler {
 	return &MessageHandler{
 		logger:                       logger.With("handlerType", "http", "handler", "message"),
 		findAllMessagesByChannelIDUC: findAllMessagesByChannelIDUC,
 		createMessageUC:              createMessageUC,
+		deleteMessageUC:              deleteMessageUC,
 	}
 }
 
@@ -223,5 +226,80 @@ func (h *MessageHandler) HandleCreateMessage() http.Handler {
 		err = json.NewEncoder(w).Encode(Response{
 			Message: message,
 		})
+	})
+}
+
+func (h *MessageHandler) HandleDeleteMessage() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		const op = "http.MessageHandler.HandleDeleteMessage"
+		var err error
+
+		ctx := r.Context()
+		logger := h.logger.With(
+			requestid.LogKey, requestid.Extract(ctx),
+			"operation", op,
+		)
+
+		defer func() {
+			if err != nil {
+				logger.Error("failed to send response", "error", err)
+			}
+		}()
+
+		messageIDRaw, ok := mux.Vars(r)["messageID"]
+		if !ok {
+			logger.Error("failed to extract message id from request")
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "missing message id",
+			})
+
+			return
+		}
+
+		messageID, err := uuid.Parse(messageIDRaw)
+		if err != nil {
+			logger.Error("failed to parse message id", "error", err)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "invalid message id",
+			})
+
+			return
+		}
+
+		authPayload, ok := jwt.Extract(ctx)
+		if !ok {
+			logger.Error("failed to extract auth payload")
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "access denied",
+			})
+
+			return
+		}
+
+		err = h.deleteMessageUC.Invoke(ctx, port.DeleteMessageUCDTO{
+			MessageID: messageID,
+			UserID:    authPayload.UserID,
+		})
+		if err != nil {
+			logger.Error("failed to delete message", "error", err)
+
+			w.WriteHeader(http.StatusInternalServerError)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "failed to delete message",
+			})
+
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	})
 }

@@ -49,5 +49,6 @@ type (
 		FindMessageByID(ctx context.Context, id uuid.UUID) (model.Message, error)
 		FindAllMessagesByChannelID(ctx context.Context, channelID uuid.UUID) ([]model.Message, error)
 		CreateMessage(ctx context.Context, dto CreateMessageRepoDTO) (uuid.UUID, error)
+		DeleteMessageByID(ctx context.Context, id uuid.UUID) error
 	}
 )

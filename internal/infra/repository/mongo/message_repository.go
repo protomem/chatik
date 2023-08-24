@@ -217,6 +217,25 @@ func (r *MessageRepository) CreateMessage(ctx context.Context, dto port.CreateMe
 	return dto.MessageID, nil
 }
 
+func (r *MessageRepository) DeleteMessageByID(ctx context.Context, id uuid.UUID) error {
+	const op = "mongo.MessageRepository.DeleteMessage"
+	var err error
+
+	filter := bson.D{
+		{Key: "message_id", Value: id.String()},
+	}
+
+	_, err = r.client.
+		Database(r.database).
+		Collection(r.collection).
+		DeleteOne(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
 func mapMessageDocumentAndUserDocumentToMessageModel(
 	messageDoc MessageDocument,
 	userDoc UserDocument,

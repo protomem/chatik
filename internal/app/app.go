@@ -45,8 +45,10 @@ type (
 		port.CreateChannelUseCase
 		port.DeleteChannelUseCase
 
+		port.FindMessageUseCase
 		port.FindAllMessagesByChannelIDUseCase
 		port.CreateMessageUseCase
+		port.DeleteMessageUseCase
 	}
 
 	Handlers struct {
@@ -103,8 +105,10 @@ func newUseCases(authSecret string, repos *Repositories) *UseCases {
 	createChannelUC := usecase.NewCreateChannel(repos.ChannelRepository, findUserUC)
 	deleteChannelUC := usecase.NewDeleteChannel(repos.ChannelRepository, findChannelUC)
 
+	findMessageUC := usecase.NewFindMessage(repos.MessageRepository)
 	findAllMessagesByChannelIDUC := usecase.NewFindAllMessagesByID(repos.MessageRepository)
 	createMessageUC := usecase.NewCreateMessage(repos.MessageRepository, findUserUC, findChannelUC)
+	deleteMessageUC := usecase.NewDeleteMessage(repos.MessageRepository, findMessageUC)
 
 	return &UseCases{
 		FindUserUseCase:                   findUserUC,
@@ -117,8 +121,10 @@ func newUseCases(authSecret string, repos *Repositories) *UseCases {
 		FindAllChannelsUseCase:            findAllChannelsUC,
 		CreateChannelUseCase:              createChannelUC,
 		DeleteChannelUseCase:              deleteChannelUC,
+		FindMessageUseCase:                findMessageUC,
 		FindAllMessagesByChannelIDUseCase: findAllMessagesByChannelIDUC,
 		CreateMessageUseCase:              createMessageUC,
+		DeleteMessageUseCase:              deleteMessageUC,
 	}
 }
 
@@ -141,6 +147,7 @@ func newHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
 			logger,
 			ucs.FindAllMessagesByChannelIDUseCase,
 			ucs.CreateMessageUseCase,
+			ucs.DeleteMessageUseCase,
 		),
 	}
 }
@@ -263,6 +270,8 @@ func (app *App) setupRoutes() {
 		MessageHandler.HandleFindAllMessages()).Methods(http.MethodGet)
 	app.router.Handle("/api/v1/channels/{channelID}/messages", app.handlers.
 		MessageHandler.HandleCreateMessage()).Methods(http.MethodPost)
+	app.router.Handle("/api/v1/channels/{channelID}/messages/{messageID}", app.handlers.
+		MessageHandler.HandleDeleteMessage()).Methods(http.MethodDelete)
 }
 
 func (app *App) startServer(_ context.Context, errs chan<- error) {

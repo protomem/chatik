@@ -113,6 +113,12 @@ type (
 // Messages Use Cases
 
 type (
+	FindMessageUseCase interface {
+		Invoke(ctx context.Context, id uuid.UUID) (model.Message, error)
+	}
+)
+
+type (
 	FindAllMessagesByChannelIDUseCase interface {
 		Invoke(ctx context.Context, channelID uuid.UUID) ([]model.Message, error)
 	}
@@ -127,5 +133,16 @@ type (
 
 	CreateMessageUseCase interface {
 		Invoke(ctx context.Context, dto CreateMessageUCDTO) (model.Message, error)
+	}
+)
+
+type (
+	DeleteMessageUCDTO struct {
+		MessageID uuid.UUID
+		UserID    uuid.UUID
+	}
+
+	DeleteMessageUseCase interface {
+		Invoke(ctx context.Context, dto DeleteMessageUCDTO) error
 	}
 )

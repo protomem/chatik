@@ -12,9 +12,33 @@ import (
 )
 
 var (
-	_ port.CreateMessageUseCase              = (*CreateMessage)(nil)
+	_ port.FindMessageUseCase                = (*FindMessage)(nil)
 	_ port.FindAllMessagesByChannelIDUseCase = (*FindAllMessagesByID)(nil)
+	_ port.CreateMessageUseCase              = (*CreateMessage)(nil)
+	_ port.DeleteMessageUseCase              = (*DeleteMessage)(nil)
 )
+
+type FindMessage struct {
+	messageRepo port.MessageRepository
+}
+
+func NewFindMessage(messageRepo port.MessageRepository) *FindMessage {
+	return &FindMessage{
+		messageRepo: messageRepo,
+	}
+}
+
+func (uc *FindMessage) Invoke(ctx context.Context, id uuid.UUID) (model.Message, error) {
+	const op = "usecase.FindMessage"
+	var err error
+
+	message, err := uc.messageRepo.FindMessageByID(ctx, id)
+	if err != nil {
+		return model.Message{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return message, nil
+}
 
 type FindAllMessagesByID struct {
 	messageRepo port.MessageRepository
@@ -97,4 +121,38 @@ func (uc *CreateMessage) Invoke(ctx context.Context, dto port.CreateMessageUCDTO
 	}
 
 	return message, nil
+}
+
+type DeleteMessage struct {
+	messageRepo port.MessageRepository
+
+	findMessageUC port.FindMessageUseCase
+}
+
+func NewDeleteMessage(messageRepo port.MessageRepository, findMessageUC port.FindMessageUseCase) *DeleteMessage {
+	return &DeleteMessage{
+		messageRepo:   messageRepo,
+		findMessageUC: findMessageUC,
+	}
+}
+
+func (uc *DeleteMessage) Invoke(ctx context.Context, dto port.DeleteMessageUCDTO) error {
+	const op = "usecase.DeleteMessage"
+	var err error
+
+	message, err := uc.findMessageUC.Invoke(ctx, dto.MessageID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if message.User.ID != dto.UserID {
+		return fmt.Errorf("%s: %w", op, model.ErrMessageNotFound)
+	}
+
+	err = uc.messageRepo.DeleteMessageByID(ctx, dto.MessageID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
