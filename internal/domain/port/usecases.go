@@ -113,6 +113,12 @@ type (
 // Messages Use Cases
 
 type (
+	FindAllMessagesByChannelIDUseCase interface {
+		Invoke(ctx context.Context, channelID uuid.UUID) ([]model.Message, error)
+	}
+)
+
+type (
 	CreateMessageUCDTO struct {
 		Content   string
 		ChannelID uuid.UUID

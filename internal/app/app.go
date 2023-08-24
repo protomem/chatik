@@ -45,6 +45,7 @@ type (
 		port.CreateChannelUseCase
 		port.DeleteChannelUseCase
 
+		port.FindAllMessagesByChannelIDUseCase
 		port.CreateMessageUseCase
 	}
 
@@ -102,6 +103,7 @@ func newUseCases(authSecret string, repos *Repositories) *UseCases {
 	createChannelUC := usecase.NewCreateChannel(repos.ChannelRepository, findUserUC)
 	deleteChannelUC := usecase.NewDeleteChannel(repos.ChannelRepository, findChannelUC)
 
+	findAllMessagesByChannelIDUC := usecase.NewFindAllMessagesByID(repos.MessageRepository)
 	createMessageUC := usecase.NewCreateMessage(repos.MessageRepository, findUserUC, findChannelUC)
 
 	return &UseCases{
@@ -115,6 +117,7 @@ func newUseCases(authSecret string, repos *Repositories) *UseCases {
 		FindAllChannelsUseCase:            findAllChannelsUC,
 		CreateChannelUseCase:              createChannelUC,
 		DeleteChannelUseCase:              deleteChannelUC,
+		FindAllMessagesByChannelIDUseCase: findAllMessagesByChannelIDUC,
 		CreateMessageUseCase:              createMessageUC,
 	}
 }
@@ -136,6 +139,7 @@ func newHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
 
 		MessageHandler: httphandl.NewMessageHandler(
 			logger,
+			ucs.FindAllMessagesByChannelIDUseCase,
 			ucs.CreateMessageUseCase,
 		),
 	}
@@ -255,6 +259,8 @@ func (app *App) setupRoutes() {
 	app.router.Handle("/api/v1/channels/{channelID}", app.handlers.
 		ChannelHandler.HandleDeleteChannel()).Methods(http.MethodDelete)
 
+	app.router.Handle("/api/v1/channels/{channelID}/messages", app.handlers.
+		MessageHandler.HandleFindAllMessages()).Methods(http.MethodGet)
 	app.router.Handle("/api/v1/channels/{channelID}/messages", app.handlers.
 		MessageHandler.HandleCreateMessage()).Methods(http.MethodPost)
 }

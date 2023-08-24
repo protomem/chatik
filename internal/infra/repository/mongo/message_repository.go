@@ -121,6 +121,76 @@ func (r *MessageRepository) FindMessageByID(ctx context.Context, id uuid.UUID) (
 	return message, nil
 }
 
+func (r *MessageRepository) FindAllMessagesByChannelID(ctx context.Context, channelID uuid.UUID) ([]model.Message, error) {
+	const op = "mongo.MessageRepository.FindAllMessagesByChannelID"
+	var err error
+
+	messagesFilter := bson.D{
+		{Key: "channel_id", Value: channelID.String()},
+	}
+
+	messagesCursor, err := r.client.
+		Database(r.database).
+		Collection(r.collection).
+		Find(ctx, messagesFilter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return []model.Message{}, nil
+		}
+
+		return []model.Message{}, fmt.Errorf("%s: find messages: %w", op, err)
+	}
+
+	messagesDocs := make([]MessageDocument, 0)
+	err = messagesCursor.All(ctx, &messagesDocs)
+	if err != nil {
+		return []model.Message{}, fmt.Errorf("%s: decode: %w", op, err)
+	}
+
+	userIDs := make([]string, 0, len(messagesDocs))
+	for _, doc := range messagesDocs {
+		userIDs = append(userIDs, doc.UserID)
+	}
+
+	usersFilter := bson.D{
+		{Key: "user_id", Value: bson.D{{Key: "$in", Value: userIDs}}},
+	}
+
+	cursorUsers, err := r.client.
+		Database(r.database).
+		Collection("users").
+		Find(ctx, usersFilter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return []model.Message{}, nil
+		}
+
+		return []model.Message{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	usersDocs := make([]UserDocument, 0)
+	err = cursorUsers.All(ctx, &usersDocs)
+	if err != nil {
+		return []model.Message{}, fmt.Errorf("%s: decode: %w", op, err)
+	}
+
+	messages := make([]model.Message, 0, len(messagesDocs))
+	for _, doc := range messagesDocs {
+		for _, userDoc := range usersDocs {
+			if userDoc.UserID == doc.UserID {
+				message, err := mapMessageDocumentAndUserDocumentToMessageModel(doc, userDoc)
+				if err != nil {
+					return []model.Message{}, fmt.Errorf("%s: %w", op, err)
+				}
+
+				messages = append(messages, message)
+			}
+		}
+	}
+
+	return messages, nil
+}
+
 func (r *MessageRepository) CreateMessage(ctx context.Context, dto port.CreateMessageRepoDTO) (uuid.UUID, error) {
 	const op = "mongo.MessageRepository.CreateMessage"
 	var err error

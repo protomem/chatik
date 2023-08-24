@@ -19,17 +19,88 @@ import (
 type MessageHandler struct {
 	logger logging.Logger
 
-	createMessageUC port.CreateMessageUseCase
+	findAllMessagesByChannelIDUC port.FindAllMessagesByChannelIDUseCase
+	createMessageUC              port.CreateMessageUseCase
 }
 
 func NewMessageHandler(
 	logger logging.Logger,
+	findAllMessagesByChannelIDUC port.FindAllMessagesByChannelIDUseCase,
 	createMessageUC port.CreateMessageUseCase,
 ) *MessageHandler {
 	return &MessageHandler{
-		logger:          logger.With("handlerType", "http", "handler", "message"),
-		createMessageUC: createMessageUC,
+		logger:                       logger.With("handlerType", "http", "handler", "message"),
+		findAllMessagesByChannelIDUC: findAllMessagesByChannelIDUC,
+		createMessageUC:              createMessageUC,
 	}
+}
+
+func (h *MessageHandler) HandleFindAllMessages() http.Handler {
+	type Response struct {
+		Messages []model.Message `json:"messages"`
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		const op = "http.MessageHandler.HandleFindAllMessages"
+		var err error
+
+		ctx := r.Context()
+		logger := h.logger.With(
+			requestid.LogKey, requestid.Extract(ctx),
+			"operation", op,
+		)
+
+		defer func() {
+			if err != nil {
+				logger.Error("failed to send response", "error", err)
+			}
+		}()
+
+		channelIDRaw, ok := mux.Vars(r)["channelID"]
+		if !ok {
+			logger.Error("failed to extract channel id from request")
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "missing channel id",
+			})
+
+			return
+		}
+
+		channelID, err := uuid.Parse(channelIDRaw)
+		if err != nil {
+			logger.Error("failed to parse channel id", "error", err)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "invalid channel id",
+			})
+
+			return
+		}
+
+		messages, err := h.findAllMessagesByChannelIDUC.Invoke(ctx, channelID)
+		if err != nil {
+			logger.Error("failed to find messages", "error", err)
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"error": "failed to find messages",
+			})
+
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		err = json.NewEncoder(w).Encode(Response{
+			Messages: messages,
+		})
+	})
 }
 
 func (h *MessageHandler) HandleCreateMessage() http.Handler {

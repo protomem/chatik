@@ -11,7 +11,32 @@ import (
 	"github.com/protomem/chatik/pkg/validation"
 )
 
-var _ port.CreateMessageUseCase = (*CreateMessage)(nil)
+var (
+	_ port.CreateMessageUseCase              = (*CreateMessage)(nil)
+	_ port.FindAllMessagesByChannelIDUseCase = (*FindAllMessagesByID)(nil)
+)
+
+type FindAllMessagesByID struct {
+	messageRepo port.MessageRepository
+}
+
+func NewFindAllMessagesByID(messageRepo port.MessageRepository) *FindAllMessagesByID {
+	return &FindAllMessagesByID{
+		messageRepo: messageRepo,
+	}
+}
+
+func (uc *FindAllMessagesByID) Invoke(ctx context.Context, channelID uuid.UUID) ([]model.Message, error) {
+	const op = "usecase.FindAllMessagesByID"
+	var err error
+
+	messages, err := uc.messageRepo.FindAllMessagesByChannelID(ctx, channelID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return messages, nil
+}
 
 type CreateMessage struct {
 	messageRepo port.MessageRepository
