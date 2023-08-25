@@ -16,6 +16,7 @@ import (
 	httphandl "github.com/protomem/chatik/internal/infra/handler/http"
 	httpmdw "github.com/protomem/chatik/internal/infra/middleware/http"
 	mongorepo "github.com/protomem/chatik/internal/infra/repository/mongo"
+	"github.com/protomem/chatik/internal/stream"
 	"github.com/protomem/chatik/pkg/closer"
 	"github.com/protomem/chatik/pkg/logging"
 	"github.com/protomem/chatik/pkg/logging/zap"
@@ -55,6 +56,7 @@ type (
 		*httphandl.AuthHandler
 		*httphandl.ChannelHandler
 		*httphandl.MessageHandler
+		*httphandl.StreamHandler
 	}
 
 	Middlewares struct {
@@ -91,7 +93,7 @@ func newRepositories(ctx context.Context, logger logging.Logger, mdb *mongo.Clie
 	}, nil
 }
 
-func newUseCases(authSecret string, repos *Repositories) *UseCases {
+func newUseCases(authSecret string, stream *stream.Stream, repos *Repositories) *UseCases {
 	findUserUC := usecase.NewFindUserByID(repos.UserRepository)
 	findUserByEmailAndPasswordUC := usecase.NewFindUserByEmailAndPassword(repos.UserRepository)
 	createUserUC := usecase.NewCreateUser(repos.UserRepository)
@@ -110,6 +112,11 @@ func newUseCases(authSecret string, repos *Repositories) *UseCases {
 	createMessageUC := usecase.NewCreateMessage(repos.MessageRepository, findUserUC, findChannelUC)
 	deleteMessageUC := usecase.NewDeleteMessage(repos.MessageRepository, findMessageUC)
 
+	observeCreateChannelUC := usecase.NewObserveCreateChannel(stream, createChannelUC)
+	observeDeleteChannelUC := usecase.NewObserveDeleteChannel(stream, deleteChannelUC)
+	observeCreateMessageUC := usecase.NewObserveCreateMessage(stream, createMessageUC)
+	observeDeleteMessageUC := usecase.NewObserveDeleteMessage(stream, deleteMessageUC)
+
 	return &UseCases{
 		FindUserUseCase:                   findUserUC,
 		FindUserByEmailAndPasswordUseCase: findUserByEmailAndPasswordUC,
@@ -119,16 +126,16 @@ func newUseCases(authSecret string, repos *Repositories) *UseCases {
 		VerifyTokenUseCase:                verifyTokenUC,
 		FindChannelUseCase:                findChannelUC,
 		FindAllChannelsUseCase:            findAllChannelsUC,
-		CreateChannelUseCase:              createChannelUC,
-		DeleteChannelUseCase:              deleteChannelUC,
+		CreateChannelUseCase:              observeCreateChannelUC,
+		DeleteChannelUseCase:              observeDeleteChannelUC,
 		FindMessageUseCase:                findMessageUC,
 		FindAllMessagesByChannelIDUseCase: findAllMessagesByChannelIDUC,
-		CreateMessageUseCase:              createMessageUC,
-		DeleteMessageUseCase:              deleteMessageUC,
+		CreateMessageUseCase:              observeCreateMessageUC,
+		DeleteMessageUseCase:              observeDeleteMessageUC,
 	}
 }
 
-func newHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
+func newHandlers(logger logging.Logger, stream *stream.Stream, ucs *UseCases) *Handlers {
 	return &Handlers{
 		AuthHandler: httphandl.NewAuthHandler(
 			logger,
@@ -149,6 +156,8 @@ func newHandlers(logger logging.Logger, ucs *UseCases) *Handlers {
 			ucs.CreateMessageUseCase,
 			ucs.DeleteMessageUseCase,
 		),
+
+		StreamHandler: httphandl.NewStreamHandler(logger, stream),
 	}
 }
 
@@ -162,7 +171,8 @@ type App struct {
 	conf   Config
 	logger logging.Logger
 
-	mdb *mongo.Client
+	mdb    *mongo.Client
+	stream *stream.Stream
 
 	repositories *Repositories
 	useCases     *UseCases
@@ -192,13 +202,15 @@ func New(conf Config) (*App, error) {
 		return nil, fmt.Errorf("%s: init mongo: %w", op, err)
 	}
 
+	stream := stream.New(logger)
+
 	repositories, err := newRepositories(ctx, logger, mdb)
 	if err != nil {
 		return nil, fmt.Errorf("%s: init repositories: %w", op, err)
 	}
 
-	useCases := newUseCases(conf.Auth.Secret, repositories)
-	handlers := newHandlers(logger, useCases)
+	useCases := newUseCases(conf.Auth.Secret, stream, repositories)
+	handlers := newHandlers(logger, stream, useCases)
 	middlewares := newMiddlewares(logger, useCases)
 
 	router := mux.NewRouter()
@@ -208,6 +220,7 @@ func New(conf Config) (*App, error) {
 		conf:         conf,
 		logger:       logger,
 		mdb:          mdb,
+		stream:       stream,
 		repositories: repositories,
 		useCases:     useCases,
 		handlers:     handlers,
@@ -244,6 +257,9 @@ func (app *App) Run() error {
 
 func (app *App) registerOnShutdown() {
 	app.closer.Add(app.server.Shutdown)
+	app.closer.Add(func(_ context.Context) error {
+		return app.stream.Close()
+	})
 	app.closer.Add(app.mdb.Disconnect)
 	app.closer.Add(app.logger.Sync)
 }
@@ -252,7 +268,6 @@ func (app *App) setupRoutes() {
 	app.router.Use(httpmdw.RequestID())
 	app.router.Use(httpmdw.RequestLogger(app.logger))
 	app.router.Use(httpmdw.Recovery(app.logger))
-	app.router.Use(httpmdw.CORS())
 
 	app.router.Use(app.middlewares.AuthMiddleware.Authenticator())
 
@@ -272,6 +287,11 @@ func (app *App) setupRoutes() {
 		MessageHandler.HandleCreateMessage()).Methods(http.MethodPost)
 	app.router.Handle("/api/v1/channels/{channelID}/messages/{messageID}", app.handlers.
 		MessageHandler.HandleDeleteMessage()).Methods(http.MethodDelete)
+
+	app.router.Handle("/api/v1/stream/sse", app.handlers.StreamHandler.HandleSSE()).Methods(http.MethodGet)
+	app.router.Handle("/api/v1/stream/ws", app.handlers.StreamHandler.HandleWS()).Methods(http.MethodGet)
+
+	app.server.Handler = httpmdw.CORS()(app.router)
 }
 
 func (app *App) startServer(_ context.Context, errs chan<- error) {

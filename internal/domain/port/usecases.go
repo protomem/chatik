@@ -146,3 +146,17 @@ type (
 		Invoke(ctx context.Context, dto DeleteMessageUCDTO) error
 	}
 )
+
+// Stream Use Cases
+
+type (
+	ObserveCreateChannelUseCase = CreateChannelUseCase
+
+	ObserveDeleteChannelUseCase = DeleteChannelUseCase
+)
+
+type (
+	ObserveCreateMessageUseCase = CreateMessageUseCase
+
+	ObserveDeleteMessageUseCase = DeleteMessageUseCase
+)

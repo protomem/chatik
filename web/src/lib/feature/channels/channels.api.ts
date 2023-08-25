@@ -28,7 +28,7 @@ interface DeleteChannelResponse {}
 export const channelsApi = createApi({
   reducerPath: "channelsApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `http://${import.meta.env.VITE_API_URL}/api/v1/channels`,
+    baseUrl: `http://${import.meta.env.VITE_API_URL}/api/v1`,
   }),
   endpoints: (builder) => ({
     getAllChannels: builder.query<
@@ -36,7 +36,7 @@ export const channelsApi = createApi({
       GetAllChannelsRequest
     >({
       query: ({ accessToken }) => ({
-        url: "/",
+        url: "/channels",
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -48,7 +48,7 @@ export const channelsApi = createApi({
       CreateChannelRequest
     >({
       query: ({ title, accessToken }) => ({
-        url: "/",
+        url: "/channels",
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -64,7 +64,7 @@ export const channelsApi = createApi({
       DeleteChannelRequest
     >({
       query: ({ channelId, accessToken }) => ({
-        url: `/${channelId}`,
+        url: `/channels/${channelId}`,
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${accessToken}`,

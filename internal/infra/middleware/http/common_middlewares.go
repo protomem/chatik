@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/protomem/chatik/internal/requestid"
 	"github.com/protomem/chatik/pkg/logging"
+	"github.com/rs/cors"
 )
 
 func RequestID() mux.MiddlewareFunc {
@@ -40,5 +41,10 @@ func Recovery(logger logging.Logger) mux.MiddlewareFunc {
 }
 
 func CORS() mux.MiddlewareFunc {
-	return handlers.CORS()
+	return cors.New(cors.Options{
+		AllowCredentials: true,
+		AllowedOrigins:   []string{"*"},
+		AllowedHeaders:   []string{"*"},
+		AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodOptions},
+	}).Handler
 }
