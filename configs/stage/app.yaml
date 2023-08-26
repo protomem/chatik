@@ -1,0 +1,13 @@
+http:
+  addr: ":8080"
+
+log:
+  level: info
+
+auth:
+  secret: "mvgZMa7XiPAkZU7mUEkKK2j4FC5P3jDv"
+
+mongo:
+  uri: "mongodb://mongo:27017"
+  user: "admin"
+  password: "123456789"

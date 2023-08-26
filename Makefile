@@ -3,9 +3,13 @@
 
 PROJECT_NAME = chatik
 
+GO_VERSION := 1.21.0
+TOOLS_DIR := tools
+
+LINTER := golangci-lint
+
 .PHONY: all
-all:
-	@echo "Choose target ..."
+all: run-stage
 
 
 #***********************************************************************
@@ -14,7 +18,7 @@ all:
 
 .PHONY: lint
 lint:
-	golangci-lint run ./...
+	${LINTER} run ./...
 
 
 .PHONY: test
@@ -26,65 +30,46 @@ test:
 ci: lint test
 
 
-
 #***********************************************************************
 # LOCAL                                   
 #***********************************************************************
 
-.PHONY: build-local
-build-local: ci
-	go build -v -o ./build/${PROJECT_NAME} ./cmd/${PROJECT_NAME}
+# TODO: add ci before run-local
+.PHONY: run-local
+run-local:
+	go run ./cmd/chatik -conf ./configs/local/app.yaml
 
 
-.PHONY: start-local
-start-local: HTTP_ADDR="localhost:8080"
-start-local: build-local
-	HTTP_ADDR=${HTTP_ADDR} ./build/${PROJECT_NAME} -conf ./configs/local.env
-
-
-.PHONY: start-infra-local
-start-infra-local:
-	docker compose -p ${PROJECT_NAME}-local -f ./deploy/local.docker-compose.yaml up -d
+.PHONY: run-infra-local
+run-infra-local:
+	docker compose -p ${PROJECT_NAME}-local -f ./deploy/local/docker-compose.yaml up -d
 
 
 .PHONY: stop-infra-local
 stop-infra-local:
-	docker compose -p ${PROJECT_NAME}-local -f ./deploy/local.docker-compose.yaml down
+	docker compose -p ${PROJECT_NAME}-local -f ./deploy/local/docker-compose.yaml down
 
 
-.PHONY: start-web-local
-start-web-local: WEB_API_URL="localhost:8080"
-start-web-local: 
-	cd ./web && VITE_API_URL=${WEB_API_URL} yarn dev
-
-
-.PHONY: clean
-clean:
-	rm -rf ./build
-	rm -rf ./logs
+.PHONY: run-web-local
+run-web-local: API_URL="localhost:8080"
+run-web-local:
+	cd ./web && VITE_API_URL=${API_URL} yarn dev
 
 
 #***********************************************************************
 # STAGE
 #***********************************************************************
 
-# TODO: add to deps: ci
-.PHONY: start-stage
-start-stage: JWT_SECRET="" 
-start-stage: MONGO_PASSWORD="" 
-start-stage: MONGO_USER="" 
-start-stage: WEB_API_URL="localhost:8080" 
-start-stage: HTTP_PORT="8080"
-start-stage:
-	JWT_SECRET=${JWT_SECRET} \
-	WEB_API_URL=${WEB_API_URL} HTTP_PORT=${HTTP_PORT} \
-	MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD} MONGO_INITDB_ROOT_USERNAME=${MONGO_USER} \
-		docker compose -p ${PROJECT_NAME}-stage -f ./deploy/stage.docker-compose.yaml up -d --build
+.PHONY: run-stage
+run-stage: API_URL="localhost:8080"
+run-stage:
+	APP_URL=${API_URL} \
+		docker compose -p ${PROJECT_NAME}-stage -f ./deploy/stage/docker-compose.yaml up -d --build
 
 
 .PHONY: stop-stage
 stop-stage:
-	docker compose -p ${PROJECT_NAME}-stage -f ./deploy/stage.docker-compose.yaml down
+	docker compose -p ${PROJECT_NAME}-stage -f ./deploy/stage/docker-compose.yaml down
 
 
 #***********************************************************************
@@ -93,20 +78,20 @@ stop-stage:
 
 .PHONY: mkdir-tools
 mkdir-tools:
-	mkdir -p ./tools
+	mkdir -p ./${TOOLS_DIR}
 
 
 .PHONY: install-lint
-install-lint: LINT_DIR="/usr/local/bin"
-install-lint:
+install-lint: LINT_DIR="./${TOOLS_DIR}"
+install-lint: mkdir-tools
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${LINT_DIR} v1.53.3
 
 
 .PHONY: install-go
 install-go: GO_DIR="/usr/local"
 install-go:
-	curl -O https://dl.google.com/go/go1.20.5.linux-amd64.tar.gz
+	curl -O https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz
 	rm -rf ${GO_DIR}/go
-	tar -C ${GO_DIR} -xzf go1.20.5.linux-amd64.tar.gz
+	tar -C ${GO_DIR} -xzf go${GO_VERSION}.linux-amd64.tar.gz
 	rm go1.20.5.linux-amd64.tar.gz
 	@echo "Add ${GO_DIR}/go/bin to PATH"

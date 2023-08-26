@@ -5,8 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/protomem/chatik/internal/api"
-	"github.com/protomem/chatik/internal/config"
+	"github.com/protomem/chatik/internal/app"
 )
 
 var _confFile string
@@ -16,28 +15,28 @@ func init() {
 }
 
 func main() {
-	var err error
-
 	flag.Parse()
 
-	if _confFile != "" {
-		err := config.Load(_confFile)
-		if err != nil {
-			log.Printf("error: %s", err.Error())
-			os.Exit(1)
-		}
-	}
-
-	conf, err := config.Parse()
-	if err != nil {
-		log.Printf("error: %s", err.Error())
+	if _confFile == "" {
+		log.Printf("error: no config file")
 		os.Exit(1)
 	}
 
-	srv := api.NewServer(conf)
-	err = srv.Run()
+	conf, err := app.NewConfig(_confFile)
 	if err != nil {
-		log.Printf("error: %s", err.Error())
+		log.Printf("error: %v", err)
+		os.Exit(1)
+	}
+
+	app, err := app.New(conf)
+	if err != nil {
+		log.Printf("error: %v", err)
+		os.Exit(1)
+	}
+
+	err = app.Run()
+	if err != nil {
+		log.Printf("error: %v", err)
 		os.Exit(1)
 	}
 }
