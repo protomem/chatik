@@ -4,13 +4,12 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 const (
-	Header = fiber.HeaderXRequestID
+	Header = "X-Request-ID"
 	LogKey = "requestId"
 )
 
@@ -27,23 +26,7 @@ func Generator() string {
 	return rid.String()
 }
 
-func Middleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		rid, ok := c.GetReqHeaders()[Header]
-		if !ok {
-			rid = Generator()
-		}
-
-		ctx := Inject(c.UserContext(), rid)
-		c.SetUserContext(ctx)
-
-		c.Locals("requestid", rid)
-
-		return c.Next()
-	}
-}
-
-func HttpMiddleware() mux.MiddlewareFunc {
+func Middleware() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rid := r.Header.Get(Header)

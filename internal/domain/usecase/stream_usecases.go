@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/protomem/chatik/internal/agregate"
-	"github.com/protomem/chatik/internal/database"
 	"github.com/protomem/chatik/internal/domain/model"
 	"github.com/protomem/chatik/internal/domain/port"
 	"github.com/protomem/chatik/internal/stream"
@@ -40,24 +38,7 @@ func (uc *ObserveCreateChannel) Invoke(ctx context.Context, dto port.CreateChann
 		return model.Channel{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	_ = stream.SendEvent(uc.stream, stream.NewChannelEvent(agregate.Channel{
-		Channel: database.Channel{
-			ID:        channel.ID,
-			CreatedAt: channel.CreatedAt,
-			UpdatedAt: channel.UpdatedAt,
-			Title:     channel.Title,
-			UserID:    channel.User.ID,
-		},
-		User: database.User{
-			ID:        channel.User.ID,
-			CreatedAt: channel.User.CreatedAt,
-			UpdatedAt: channel.User.UpdatedAt,
-			Nickname:  channel.User.Nickname,
-			Email:     channel.User.Email,
-			Password:  channel.User.Password,
-			Verified:  channel.User.Verified,
-		},
-	}))
+	_ = stream.SendEvent(uc.stream, stream.NewChannelEvent(channel))
 
 	return channel, nil
 }
@@ -111,25 +92,7 @@ func (uc *ObserveCreateMessage) Invoke(ctx context.Context, dto port.CreateMessa
 		return model.Message{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	_ = stream.SendEvent(uc.stream, stream.NewMessageEvent(agregate.Message{
-		Message: database.Message{
-			ID:        message.ID,
-			CreatedAt: message.CreatedAt,
-			UpdatedAt: message.UpdatedAt,
-			Content:   message.Content,
-			UserID:    message.User.ID,
-			ChannelID: message.ChannelID,
-		},
-		User: database.User{
-			ID:        message.User.ID,
-			CreatedAt: message.User.CreatedAt,
-			UpdatedAt: message.User.UpdatedAt,
-			Nickname:  message.User.Nickname,
-			Email:     message.User.Email,
-			Password:  message.User.Password,
-			Verified:  message.User.Verified,
-		},
-	}))
+	_ = stream.SendEvent(uc.stream, stream.NewMessageEvent(message))
 
 	return model.Message{}, nil
 }

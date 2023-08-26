@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/protomem/chatik/internal/agregate"
+	"github.com/protomem/chatik/internal/domain/model"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 type EventType string
 
 type NewMessagePayload struct {
-	Message agregate.Message `json:"message"`
+	Message model.Message `json:"message"`
 }
 
 type RemoveMessagePayload struct {
@@ -27,7 +27,7 @@ type RemoveMessagePayload struct {
 }
 
 type NewChannelPayload struct {
-	Channel agregate.Channel `json:"channel"`
+	Channel model.Channel `json:"channel"`
 }
 
 type RemoveChannelPayload struct {
@@ -50,7 +50,7 @@ func NewEvent[P PayloadOrder](eType EventType, payload P) Event[P] {
 	}
 }
 
-func NewMessageEvent(message agregate.Message) Event[NewMessagePayload] {
+func NewMessageEvent(message model.Message) Event[NewMessagePayload] {
 	return NewEvent[NewMessagePayload](
 		NewMessageEvn,
 		NewMessagePayload{
@@ -68,7 +68,7 @@ func RemoveMessageEvent(messageID uuid.UUID) Event[RemoveMessagePayload] {
 	)
 }
 
-func NewChannelEvent(channel agregate.Channel) Event[NewChannelPayload] {
+func NewChannelEvent(channel model.Channel) Event[NewChannelPayload] {
 	return NewEvent[NewChannelPayload](
 		NewChannelEvn,
 		NewChannelPayload{

@@ -11,7 +11,7 @@ import (
 )
 
 func RequestID() mux.MiddlewareFunc {
-	return requestid.HttpMiddleware()
+	return requestid.Middleware()
 }
 
 func RequestLogger(logger logging.Logger) mux.MiddlewareFunc {
