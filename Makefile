@@ -63,7 +63,7 @@ run-web-local:
 .PHONY: run-stage
 run-stage: API_URL="localhost:8080"
 run-stage:
-	APP_URL=${API_URL} \
+	API_URL=${API_URL} \
 		docker compose -p ${PROJECT_NAME}-stage -f ./deploy/stage/docker-compose.yaml up -d --build
 
 
