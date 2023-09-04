@@ -47,7 +47,7 @@ func Generate(payload Payload, params GenerateParams) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(params.TTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "mytube",
+			Issuer:    "chatik",
 		},
 	}
 
