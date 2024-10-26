@@ -1,0 +1,27 @@
+log:
+  pretty: true
+
+http:
+  listenAddr: ":8080"
+  baseAddr: "localhost:8080"
+
+db:
+  dsn: "postgres://admin:123456789@localhost:5432/postgres?sslmode=disable"
+  ping: true
+
+sessionMng:
+  addr: "localhost:6379"
+  db: 0
+  ping: true
+
+lastSeen:
+  addr: "localhost:6379"
+  db: 1
+  ping: true
+
+auth:
+  accessToken:
+    secretKey: "3nN6CAWvtrX27MUmviCpMmziu60QMdyrVGw56HRrADw9gyaVYq8U8eqedBXGCGHL"
+    expiration: "3h"
+  refreshToken:
+    expiration: "72h"
